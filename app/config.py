@@ -17,6 +17,7 @@ class Settings:
     base_url: str = os.getenv("BASE_URL", "http://127.0.0.1:8000")
     league_id: int = int(os.getenv("LEAGUE_ID", "1"))
     current_season_id: int = int(os.getenv("CURRENT_SEASON_ID", "74"))
+    current_stat_class_id: int = int(os.getenv("CURRENT_STAT_CLASS_ID", "1"))
     tts_api_base: str = os.getenv(
         "TTS_API_BASE", "https://api.sharksice.timetoscore.com"
     )

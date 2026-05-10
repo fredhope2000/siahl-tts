@@ -33,7 +33,7 @@ async def home(request: Request):
         "teams": meta.teams,
         "games_grouped": service.group_games_by_date(schedule.games),
     }
-    return templates.TemplateResponse("home.html", context)
+    return templates.TemplateResponse(request, "home.html", context)
 
 
 @router.get("/standings", response_class=HTMLResponse)
@@ -56,7 +56,7 @@ async def standings(
         "selected_division": selected_division,
         "standings_payload": standings_payload,
     }
-    return templates.TemplateResponse("standings.html", context)
+    return templates.TemplateResponse(request, "standings.html", context)
 
 
 @router.get("/schedule", response_class=HTMLResponse)
@@ -84,7 +84,7 @@ async def schedule(
         "selected_view": view,
         "games_grouped": service.group_games_by_date(schedule_payload.games),
     }
-    return templates.TemplateResponse("schedule.html", context)
+    return templates.TemplateResponse(request, "schedule.html", context)
 
 
 @router.get("/teams/{team_id}", response_class=HTMLResponse)
@@ -97,4 +97,4 @@ async def team_page(request: Request, team_id: int):
         "roster": team_data.roster,
         "games_grouped": service.group_games_by_date(team_data.games),
     }
-    return templates.TemplateResponse("team.html", context)
+    return templates.TemplateResponse(request, "team.html", context)

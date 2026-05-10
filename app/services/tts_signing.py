@@ -35,7 +35,7 @@ def build_signed_query(
         signed_params[key] = str(value)
 
     query = canonical_query(signed_params)
-    string_to_sign = f"GET /{endpoint} {query}"
+    string_to_sign = f"GET\n/{endpoint}\n{query}"
     signature = hmac.new(
         api_secret.encode("utf-8"),
         string_to_sign.encode("utf-8"),

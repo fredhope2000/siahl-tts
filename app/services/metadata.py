@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from app.config import Settings
@@ -37,14 +37,28 @@ class TimeToScoreService:
             if self.uses_mock_data:
                 return self._mock_meta()
 
-            raw = await self.client.request(
+            leagues_raw = await self.client.request(
+                "get_leagues",
+                {
+                    "league_id": self.settings.league_id,
+                },
+            )
+            divisions_raw = await self.client.request(
                 "get_divisions",
                 {
                     "league_id": self.settings.league_id,
                     "season_id": self.settings.current_season_id,
                 },
             )
-            return self._normalize_meta(raw)
+            standings_raw = await self.client.request(
+                "get_standings",
+                {
+                    "league_id": self.settings.league_id,
+                    "season_id": self.settings.current_season_id,
+                    "stat_class": self.settings.current_stat_class_id,
+                },
+            )
+            return self._normalize_meta(leagues_raw, divisions_raw, standings_raw)
 
         return await self.cache.get_or_set(
             "meta", self.settings.cache_ttl_meta, loader
@@ -60,6 +74,7 @@ class TimeToScoreService:
                 {
                     "league_id": self.settings.league_id,
                     "season_id": self.settings.current_season_id,
+                    "stat_class": self.settings.current_stat_class_id,
                     "level_id": division_id,
                 },
             )
@@ -79,16 +94,18 @@ class TimeToScoreService:
             if self.uses_mock_data:
                 return self._mock_schedule(division_id, team_id, view)
 
-            raw = await self.client.request(
-                "get_schedule_lite",
-                {
-                    "league_id": self.settings.league_id,
-                    "season_id": self.settings.current_season_id,
-                    "level_id": division_id,
-                    "team_id": team_id,
-                },
+            raw = await self._fetch_schedule_raw(division_id, team_id, view)
+            division_map = None
+            if team_id is None:
+                meta = await self.get_meta()
+                division_map = {team.id: team.division_id for team in meta.teams}
+            return self._normalize_schedule(
+                raw,
+                division_id,
+                team_id,
+                view,
+                team_division_map=division_map,
             )
-            return self._normalize_schedule(raw, division_id, team_id, view)
 
         cache_key = f"schedule:{division_id}:{team_id}:{view}"
         return await self.cache.get_or_set(
@@ -106,6 +123,7 @@ class TimeToScoreService:
                 {
                     "league_id": self.settings.league_id,
                     "season_id": self.settings.current_season_id,
+                    "stat_class": self.settings.current_stat_class_id,
                     "team_id": team_id,
                 },
             )
@@ -130,41 +148,116 @@ class TimeToScoreService:
             grouped[label].append(game)
         return sorted(grouped.items(), key=lambda item: item[0])
 
-    def _normalize_meta(self, raw: dict[str, Any]) -> MetaPayload:
-        season = Season(
-            id=self.settings.current_season_id,
-            label=f"Season {self.settings.current_season_id}",
-            is_current=True,
-        )
+    async def _fetch_schedule_raw(
+        self, division_id: int | None, team_id: int | None, view: str
+    ) -> dict[str, Any]:
+        if team_id is not None:
+            return await self.client.request(
+                "get_schedule",
+                {
+                    "league_id": self.settings.league_id,
+                    "season_id": self.settings.current_season_id,
+                    "stat_class": self.settings.current_stat_class_id,
+                    "team_id": team_id,
+                },
+            )
+
+        params: dict[str, str | int | None] = {
+            "league_id": self.settings.league_id,
+            "season_id": self.settings.current_season_id,
+        }
+        if view == "upcoming":
+            params["date"] = date.today().isoformat()
+            params["days"] = 20
+        return await self.client.request("get_schedule_lite", params)
+
+    def _normalize_meta(
+        self,
+        leagues_raw: dict[str, Any],
+        divisions_raw: dict[str, Any],
+        standings_raw: dict[str, Any],
+    ) -> MetaPayload:
+        season = self._normalize_current_season(leagues_raw)
         divisions: list[Division] = []
         teams: list[Team] = []
 
-        raw_divisions = self._extract_list(raw)
-        for item in raw_divisions:
+        for item in divisions_raw.get("divisions", []):
             division_id = self._int_from(item, ["level_id", "id"])
             if division_id is None:
                 continue
             division = Division(
                 id=division_id,
-                name=self._str_from(item, ["level_name", "name"], f"Division {division_id}"),
+                name=self._str_from(
+                    item, ["level_name", "div_name", "name"], f"Division {division_id}"
+                ),
                 season_id=self.settings.current_season_id,
             )
             divisions.append(division)
-            for team_item in item.get("teams", []):
-                team_id = self._int_from(team_item, ["team_id", "id"])
-                if team_id is None:
-                    continue
-                teams.append(
-                    Team(
-                        id=team_id,
-                        name=self._str_from(team_item, ["team_name", "name"], f"Team {team_id}"),
+
+        standings_levels = self._extract_standings_levels(standings_raw)
+        division_name_map = {division.id: division.name for division in divisions}
+        seen_team_ids: set[int] = set()
+        for level in standings_levels:
+            level_id = self._int_from(level, ["id", "level_id"])
+            if level_id is None:
+                continue
+            level_name = self._str_from(
+                level,
+                ["name", "level_name"],
+                division_name_map.get(level_id, f"Division {level_id}"),
+            )
+            level_name = division_name_map.get(level_id, self._normalize_division_name(level_name))
+            division_name_map.setdefault(level_id, level_name)
+
+            if level_id not in {division.id for division in divisions}:
+                divisions.append(
+                    Division(
+                        id=level_id,
+                        name=level_name,
                         season_id=self.settings.current_season_id,
-                        division_id=division.id,
-                        division_name=division.name,
                     )
                 )
 
+            for conference in level.get("conferences", []):
+                for team_item in conference.get("teams", []):
+                    team_id = self._int_from(team_item, ["id", "team_id"])
+                    if team_id is None or team_id in seen_team_ids:
+                        continue
+                    seen_team_ids.add(team_id)
+                    teams.append(
+                        Team(
+                            id=team_id,
+                            name=self._clean_name(
+                                self._str_from(
+                                    team_item,
+                                    ["team_name", "name"],
+                                    f"Team {team_id}",
+                                )
+                            ),
+                            season_id=self.settings.current_season_id,
+                            division_id=level_id,
+                            division_name=division_name_map.get(level_id, level_name),
+                        )
+                    )
+
+        divisions.sort(key=lambda item: (self._division_sort_key(item.name), item.name))
+        teams.sort(key=lambda item: (item.division_name or "", item.name))
+
         return MetaPayload(current_season=season, divisions=divisions, teams=teams)
+
+    def _normalize_current_season(self, leagues_raw: dict[str, Any]) -> Season:
+        league = (leagues_raw.get("leagues") or [{}])[0]
+        season_id = self._int_from(league, ["current_season"], self.settings.current_season_id)
+        label = None
+        for item in league.get("seasons", []):
+            if self._int_from(item, ["season_id"]) == season_id:
+                label = self._str_from(item, ["season_name"])
+                break
+        return Season(
+            id=season_id or self.settings.current_season_id,
+            label=label or f"Season {self.settings.current_season_id}",
+            is_current=True,
+        )
 
     async def _normalize_standings(
         self, raw: dict[str, Any], division_id: int
@@ -178,23 +271,35 @@ class TimeToScoreService:
                 season_id=self.settings.current_season_id,
             ),
         )
-        standings = [
-            StandingRow(
-                team_id=self._int_from(item, ["team_id", "id"], 0),
-                team_name=self._str_from(item, ["team_name", "name"], "Unknown Team"),
-                division_id=division_id,
-                gp=self._int_from(item, ["gp", "games_played"]),
-                w=self._int_from(item, ["w", "wins"]),
-                l=self._int_from(item, ["l", "losses"]),
-                t=self._int_from(item, ["t", "ties"]),
-                otl=self._int_from(item, ["otl", "ot_losses"]),
-                gf=self._int_from(item, ["gf", "goals_for"]),
-                ga=self._int_from(item, ["ga", "goals_against"]),
-                gd=self._int_from(item, ["gd", "goal_diff"]),
-                pts=self._int_from(item, ["pts", "points"]),
-            )
-            for item in self._extract_list(raw)
-        ]
+        standings: list[StandingRow] = []
+        for level in self._extract_standings_levels(raw):
+            if self._int_from(level, ["id", "level_id"]) != division_id:
+                continue
+            for conference in level.get("conferences", []):
+                for item in conference.get("teams", []):
+                    standings.append(
+                        StandingRow(
+                            team_id=self._int_from(item, ["id", "team_id"], 0),
+                            team_name=self._clean_name(
+                                self._str_from(
+                                    item,
+                                    ["team_name", "name"],
+                                    "Unknown Team",
+                                )
+                            ),
+                            division_id=division_id,
+                            gp=self._int_from(item, ["games_played", "gp"]),
+                            w=self._int_from(item, ["wins", "w"]),
+                            l=self._int_from(item, ["losses", "l"]),
+                            t=self._int_from(item, ["ties", "t"]),
+                            otl=self._int_from(item, ["otlosses", "ot_losses", "otl"]),
+                            gf=self._int_from(item, ["goals_for", "gf"]),
+                            ga=self._int_from(item, ["goals_against", "ga"]),
+                            gd=self._int_from(item, ["plusminus", "goal_diff", "gd"]),
+                            pts=self._int_from(item, ["pts", "points"]),
+                        )
+                    )
+        standings.sort(key=lambda item: (-1 * (item.pts or 0), item.team_name))
         return StandingsPayload(
             season_id=self.settings.current_season_id,
             division=division,
@@ -207,10 +312,17 @@ class TimeToScoreService:
         division_id: int | None,
         team_id: int | None,
         view: str,
+        team_division_map: dict[int, int | None] | None = None,
     ) -> SchedulePayload:
-        games = [self._normalize_game(item) for item in self._extract_list(raw)]
+        games = [
+            self._normalize_game(item, team_division_map=team_division_map)
+            for item in raw.get("games", [])
+        ]
+        if division_id is not None and team_id is None:
+            games = [game for game in games if game.division_id == division_id]
         if view == "upcoming":
             games = [game for game in games if game.status != "final"]
+        games.sort(key=lambda item: ((item.date_label or ""), (item.time_label or "")))
         return SchedulePayload(
             season_id=self.settings.current_season_id,
             filters=ScheduleFilters(division=division_id, team=team_id, view=view),
@@ -225,64 +337,109 @@ class TimeToScoreService:
         team_id: int,
     ) -> TeamPageData:
         team_item = self._extract_first(team_raw)
+        current_level = None
+        for level in team_raw.get("levels", []):
+            if self._int_from(level, ["season_id"]) == self.settings.current_season_id:
+                current_level = level
+                break
         team = Team(
             id=team_id,
-            name=self._str_from(team_item, ["team_name", "name"], f"Team {team_id}"),
+            name=self._clean_name(
+                self._str_from(team_item, ["team_name", "name"], f"Team {team_id}")
+            ),
             season_id=self.settings.current_season_id,
-            division_id=self._int_from(team_item, ["level_id"]),
-            division_name=self._str_from(team_item, ["level_name"]),
+            division_id=self._int_from(current_level or {}, ["level_id"]),
+            division_name=self._normalize_division_name(
+                self._str_from(current_level or {}, ["level_name"])
+            ),
         )
         roster = [
             RosterPlayer(
                 id=self._int_from(item, ["player_id", "id"]),
-                name=self._str_from(item, ["player_name", "name"], "Unknown Player"),
-                jersey_number=self._str_from(item, ["jersey_number", "number"]),
+                name=self._clean_name(
+                    self._str_from(item, ["player_name", "name"], "Unknown Player")
+                ),
+                jersey_number=self._str_from(item, ["jersey", "jersey_number", "number"]),
                 position=self._str_from(item, ["position"]),
             )
-            for item in self._extract_list(roster_raw)
+            for item in roster_raw.get("players", [])
         ]
-        games = [self._normalize_game(item) for item in self._extract_list(schedule_raw)]
+        games = [self._normalize_game(item) for item in schedule_raw.get("games", [])]
+        games.sort(key=lambda item: ((item.date_label or ""), (item.time_label or "")))
         return TeamPageData(team=team, roster=roster, games=games)
 
-    def _normalize_game(self, item: dict[str, Any]) -> Game:
+    def _normalize_game(
+        self,
+        item: dict[str, Any],
+        team_division_map: dict[int, int | None] | None = None,
+    ) -> Game:
         game_id = self._int_from(item, ["game_id", "id"], 0)
         status = self._normalize_status(item)
+        site_base = self.settings.tts_site_base.rstrip("/")
+        external_scorecard_url = self._str_from(item, ["scoresheet_link"])
+        if external_scorecard_url:
+            external_scorecard_url = external_scorecard_url.replace("//generate-scorecard.php", "/generate-scorecard.php")
+        else:
+            external_scorecard_url = f"{site_base}/generate-scorecard.php?game_id={game_id}"
+        home_team_id = self._int_from(item, ["home_id", "home_team_id"])
+        away_team_id = self._int_from(item, ["away_id", "away_team_id"])
+        division_id = self._int_from(item, ["level_id"])
+        if division_id is None and team_division_map and home_team_id and away_team_id:
+            home_division = team_division_map.get(home_team_id)
+            away_division = team_division_map.get(away_team_id)
+            if home_division is not None and home_division == away_division:
+                division_id = home_division
         return Game(
             id=game_id,
-            season_id=self.settings.current_season_id,
-            division_id=self._int_from(item, ["level_id"]),
-            venue=self._str_from(item, ["rink", "venue", "location"]),
-            starts_at=self._str_from(item, ["starts_at", "game_date", "date_time"]),
-            date_label=self._str_from(item, ["date_label", "game_date", "date"], "TBD"),
-            time_label=self._str_from(item, ["time_label", "game_time", "time"]),
+            season_id=self._int_from(item, ["season_id"], self.settings.current_season_id)
+            or self.settings.current_season_id,
+            division_id=division_id,
+            venue=self._str_from(item, ["location", "rink", "venue"]),
+            starts_at=self._str_from(item, ["gmt_time"]),
+            date_label=self._str_from(item, ["date", "game_date", "date_label"], "TBD"),
+            time_label=self._str_from(item, ["formatted_time", "time_label", "game_time", "time"]),
             status=status,
-            home_team_id=self._int_from(item, ["home_team_id"]),
-            home_team_name=self._str_from(item, ["home_team_name", "home"], "Home"),
-            away_team_id=self._int_from(item, ["away_team_id"]),
-            away_team_name=self._str_from(item, ["away_team_name", "away"], "Away"),
-            home_score=self._int_from(item, ["home_score"]),
-            away_score=self._int_from(item, ["away_score"]),
-            external_game_url=f"{self.settings.tts_site_base.rstrip('/')}/test/game.php?game={game_id}",
-            external_scorecard_url=(
-                f"{self.settings.tts_site_base.rstrip('/')}/generate-scorecard.php?game_id={game_id}"
+            home_team_id=home_team_id,
+            home_team_name=self._clean_name(
+                self._str_from(item, ["home_team", "home_team_name", "home"], "Home")
             ),
+            away_team_id=away_team_id,
+            away_team_name=self._clean_name(
+                self._str_from(item, ["away_team", "away_team_name", "away"], "Away")
+            ),
+            home_score=self._int_from(item, ["home_goals", "home_score"]),
+            away_score=self._int_from(item, ["away_goals", "away_score"]),
+            external_game_url=f"{site_base}/test/game.php?game={game_id}",
+            external_scorecard_url=external_scorecard_url,
         )
 
     def _normalize_status(self, item: dict[str, Any]) -> str | None:
-        raw = self._str_from(item, ["status", "game_status"], "").lower()
+        raw = self._str_from(item, ["game_status", "status"], "").strip().lower()
         if raw in {"final", "completed", "closed"}:
             return "final"
         if raw in {"live", "in progress"}:
             return "live"
         if raw in {"postponed"}:
             return "postponed"
+        if raw in {"not started", "open"}:
+            return "scheduled"
         if raw:
             return "scheduled"
-        if self._int_from(item, ["home_score"]) is not None or self._int_from(
-            item, ["away_score"]
+        if self._int_from(item, ["home_goals", "home_score"]) is not None or self._int_from(
+            item, ["away_goals", "away_score"]
         ) is not None:
             return "final"
         return "scheduled"
+
+    def _extract_standings_levels(self, raw: dict[str, Any]) -> list[dict[str, Any]]:
+        standings = raw.get("standings")
+        if not isinstance(standings, dict):
+            return []
+        leagues = standings.get("leagues") or []
+        if not leagues:
+            return []
+        first_league = leagues[0]
+        return [item for item in first_league.get("levels", []) if isinstance(item, dict)]
 
     def _extract_list(self, raw: dict[str, Any]) -> list[dict[str, Any]]:
         if isinstance(raw, list):
@@ -320,6 +477,21 @@ class TimeToScoreService:
             except (TypeError, ValueError):
                 continue
         return default
+
+    def _clean_name(self, value: str | None) -> str:
+        return (value or "").strip()
+
+    def _division_sort_key(self, value: str) -> tuple[int, str]:
+        digits = "".join(character for character in value if character.isdigit())
+        return (int(digits) if digits else 999, value)
+
+    def _normalize_division_name(self, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        if normalized.startswith("Adult "):
+            normalized = normalized.removeprefix("Adult ").strip()
+        return normalized
 
     def _mock_meta(self) -> MetaPayload:
         season = Season(
