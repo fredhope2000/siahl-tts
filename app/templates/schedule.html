@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">{{ current_season.label }}</p>
+      <h1>Schedule</h1>
+    </div>
+  </div>
+
+  <form method="get" action="/schedule" class="filters">
+    <label>
+      Division
+      <select name="division">
+        <option value="">All divisions</option>
+        {% for division in divisions %}
+        <option value="{{ division.id }}" {% if selected_division == division.id %}selected{% endif %}>
+          {{ division.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      Team
+      <select name="team">
+        <option value="">All teams</option>
+        {% for team_item in teams %}
+        <option value="{{ team_item.id }}" {% if selected_team == team_item.id %}selected{% endif %}>
+          {{ team_item.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      View
+      <select name="view">
+        <option value="upcoming" {% if selected_view == "upcoming" %}selected{% endif %}>Upcoming</option>
+        <option value="all" {% if selected_view == "all" %}selected{% endif %}>All season</option>
+      </select>
+    </label>
+    <button type="submit">Apply</button>
+  </form>
+
+  {% include "partials/game_list.html" %}
+</section>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% if standings %}
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Team</th>
+        <th>GP</th>
+        <th>W</th>
+        <th>L</th>
+        <th>T</th>
+        <th>GF</th>
+        <th>GA</th>
+        <th>GD</th>
+        <th>PTS</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in standings %}
+      <tr>
+        <td><a href="/teams/{{ row.team_id }}">{{ row.team_name }}</a></td>
+        <td>{{ row.gp or "-" }}</td>
+        <td>{{ row.w or "-" }}</td>
+        <td>{{ row.l or "-" }}</td>
+        <td>{{ row.t or "-" }}</td>
+        <td>{{ row.gf or "-" }}</td>
+        <td>{{ row.ga or "-" }}</td>
+        <td>{{ row.gd or "-" }}</td>
+        <td>{{ row.pts or "-" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty-state">No standings available.</p>
+{% endif %}

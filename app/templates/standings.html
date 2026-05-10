@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">{{ current_season.label }}</p>
+      <h1>Standings</h1>
+    </div>
+  </div>
+
+  <form method="get" action="/standings" class="filters">
+    <label>
+      Division
+      <select name="division" onchange="this.form.submit()">
+        {% for division in divisions %}
+        <option value="{{ division.id }}" {% if selected_division == division.id %}selected{% endif %}>
+          {{ division.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+  </form>
+
+  {% if standings_payload %}
+  {% set standings = standings_payload.standings %}
+  {% include "partials/standings_table.html" %}
+  {% endif %}
+</section>
+{% endblock %}
