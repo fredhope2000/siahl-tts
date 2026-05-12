@@ -2,27 +2,24 @@
   {% for date_label, games in games_grouped %}
   <section class="game-group">
     <h3>{{ date_label }}</h3>
-    <div class="game-stack">
+    <div class="game-table">
       {% for game in games %}
-      <article class="game-card">
-        <div class="game-meta">
-          <span>{{ game.time_label or "TBD" }}</span>
-          {% if game.venue %}<span>{{ game.venue }}</span>{% endif %}
+      <article class="game-row">
+        <div class="game-row-main">
+          <span class="game-time">{{ game.time_label or "TBD" }}</span>
+          <span class="game-team">{{ game.away_team_name }}</span>
+          {% if game.away_score is not none %}<span class="game-score">{{ game.away_score }}</span>{% endif %}
+          <span class="game-sep">@</span>
+          <span class="game-team">{{ game.home_team_name }}</span>
+          {% if game.home_score is not none %}<span class="game-score">{{ game.home_score }}</span>{% endif %}
+        </div>
+        <div class="game-row-side">
+          {% if game.venue %}<span class="game-venue">{{ game.venue }}</span>{% endif %}
           {% if game.status %}<span class="status-pill status-{{ game.status }}">{{ game.status }}</span>{% endif %}
-        </div>
-        <div class="game-matchup">
-          <div>
-            <strong>{{ game.away_team_name }}</strong>
-            {% if game.away_score is not none %}<span class="score">{{ game.away_score }}</span>{% endif %}
+          <div class="game-links">
+            <a href="{{ game.external_game_url }}" target="_blank" rel="noreferrer">Game</a>
+            <a href="{{ game.external_scorecard_url }}" target="_blank" rel="noreferrer">Scorecard</a>
           </div>
-          <div>
-            <strong>{{ game.home_team_name }}</strong>
-            {% if game.home_score is not none %}<span class="score">{{ game.home_score }}</span>{% endif %}
-          </div>
-        </div>
-        <div class="game-links">
-          <a href="{{ game.external_game_url }}" target="_blank" rel="noreferrer">Game Detail</a>
-          <a href="{{ game.external_scorecard_url }}" target="_blank" rel="noreferrer">Scorecard</a>
         </div>
       </article>
       {% endfor %}

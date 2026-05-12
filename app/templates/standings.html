@@ -13,8 +13,9 @@
     <label>
       Division
       <select name="division" onchange="this.form.submit()">
+        <option value="all" {% if selected_division == "all" %}selected{% endif %}>All</option>
         {% for division in divisions %}
-        <option value="{{ division.id }}" {% if selected_division == division.id %}selected{% endif %}>
+        <option value="{{ division.id }}" {% if selected_division == division.id|string %}selected{% endif %}>
           {{ division.name }}
         </option>
         {% endfor %}
@@ -22,9 +23,17 @@
     </label>
   </form>
 
-  {% if standings_payload %}
-  {% set standings = standings_payload.standings %}
-  {% include "partials/standings_table.html" %}
+  {% if selected_division == "all" %}
+    {% for payload in all_standings %}
+    <section class="standings-section">
+      <h2 class="standings-subhead">{{ payload.division.name }}</h2>
+      {% set standings = payload.standings %}
+      {% include "partials/standings_table.html" %}
+    </section>
+    {% endfor %}
+  {% elif standings_payload %}
+    {% set standings = standings_payload.standings %}
+    {% include "partials/standings_table.html" %}
   {% endif %}
 </section>
 {% endblock %}

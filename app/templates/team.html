@@ -6,27 +6,25 @@
   <h1>{{ team.name }}</h1>
 </section>
 
-<section class="panel-grid">
-  <article class="panel">
-    <h2>Roster</h2>
-    {% if roster %}
-    <div class="roster-list">
-      {% for player in roster %}
-      <div class="roster-row">
-        <strong>{{ player.name }}</strong>
-        <span>{{ player.position or "" }}</span>
-        <span>{{ player.jersey_number or "" }}</span>
-      </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <p class="empty-state">No roster available.</p>
-    {% endif %}
-  </article>
+<section class="panel">
+  <h2>Schedule</h2>
+  {% include "partials/game_list.html" %}
+</section>
 
-  <article class="panel">
-    <h2>Schedule</h2>
-    {% include "partials/game_list.html" %}
-  </article>
+<section class="panel">
+  <h2>Roster</h2>
+  {% if roster %}
+  <div class="roster-list">
+    {% for player in roster %}
+    <div class="roster-row">
+      <strong>{{ player.name }}</strong>
+      <span>{{ player.position or "" }}</span>
+      <span>{{ player.jersey_number or "" }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty-state">No roster available.</p>
+  {% endif %}
 </section>
 {% endblock %}

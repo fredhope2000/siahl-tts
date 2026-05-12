@@ -38,6 +38,7 @@ class StandingRow(BaseModel):
     ga: int | None = None
     gd: int | None = None
     pts: int | None = None
+    streak: str | None = None
 
 
 class RosterPlayer(BaseModel):

@@ -1,14 +1,34 @@
 from __future__ import annotations
 
+import asyncio
+from datetime import date
+
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from app.models.domain import Division
-
 
 router = APIRouter(tags=["pages"])
 templates = Jinja2Templates(directory="app/templates")
+
+
+def _optional_int(value: str | None) -> int | None:
+    if value in (None, ""):
+        return None
+    return int(value)
+
+
+def _optional_int_list(values: list[str] | None) -> list[int]:
+    return [int(value) for value in (values or []) if value != ""]
+
+
+def _game_date_label(value: str | None) -> date | None:
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
 
 
 def _base_context(request: Request) -> dict:
@@ -24,8 +44,10 @@ def _base_context(request: Request) -> dict:
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     service = request.app.state.tts_service
-    meta = await service.get_meta()
-    schedule = await service.get_schedule(view="upcoming")
+    meta, schedule = await asyncio.gather(
+        service.get_meta(),
+        service.get_schedule(view="upcoming"),
+    )
     context = _base_context(request) | {
         "page_title": "Home",
         "current_season": meta.current_season,
@@ -39,22 +61,24 @@ async def home(request: Request):
 @router.get("/standings", response_class=HTMLResponse)
 async def standings(
     request: Request,
-    division: int | None = Query(default=None),
+    division: str | None = Query(default=None),
 ):
     service = request.app.state.tts_service
     meta = await service.get_meta()
-    selected_division = division or (meta.divisions[0].id if meta.divisions else None)
-    standings_payload = (
-        await service.get_standings(selected_division)
-        if selected_division is not None
-        else None
-    )
+    selected_division = division or "all"
+    standings_payload = None
+    all_standings = []
+    if selected_division == "all":
+        all_standings = await service.get_all_standings()
+    else:
+        standings_payload = await service.get_standings(int(selected_division))
     context = _base_context(request) | {
         "page_title": "Standings",
         "current_season": meta.current_season,
         "divisions": meta.divisions,
         "selected_division": selected_division,
         "standings_payload": standings_payload,
+        "all_standings": all_standings,
     }
     return templates.TemplateResponse(request, "standings.html", context)
 
@@ -62,27 +86,63 @@ async def standings(
 @router.get("/schedule", response_class=HTMLResponse)
 async def schedule(
     request: Request,
-    division: int | None = Query(default=None),
-    team: int | None = Query(default=None),
-    view: str = Query(default="upcoming", pattern="^(upcoming|all)$"),
+    division: list[str] | None = Query(default=None),
+    team: list[str] | None = Query(default=None),
+    view: str = Query(default="upcoming", pattern="^(upcoming|to-date|all)$"),
 ):
     service = request.app.state.tts_service
-    meta = await service.get_meta()
-    schedule_payload = await service.get_schedule(
-        division_id=division, team_id=team, view=view
+    meta, schedule_payload = await asyncio.gather(
+        service.get_meta(),
+        service.get_schedule(view="all"),
     )
-    filtered_teams = meta.teams
-    if division is not None:
-        filtered_teams = [team_item for team_item in meta.teams if team_item.division_id == division]
+    selected_divisions = _optional_int_list(division)
+    selected_teams = _optional_int_list(team)
+    selected_division_set = set(selected_divisions)
+    selected_team_set = set(selected_teams)
+    team_division_map = {team_item.id: team_item.division_id for team_item in meta.teams}
+
+    games = schedule_payload.games
+    if selected_division_set:
+        games = [
+            game
+            for game in games
+            if (
+                game.division_id in selected_division_set
+                or team_division_map.get(game.home_team_id or -1) in selected_division_set
+                or team_division_map.get(game.away_team_id or -1) in selected_division_set
+            )
+        ]
+    if selected_team_set:
+        games = [
+            game
+            for game in games
+            if game.home_team_id in selected_team_set or game.away_team_id in selected_team_set
+        ]
+
+    today = date.today()
+    if view == "upcoming":
+        games = [
+            game
+            for game in games
+            if (_game_date_label(game.date_label) or today) >= today
+        ]
+    elif view == "to-date":
+        games = [
+            game
+            for game in games
+            if (_game_date_label(game.date_label) or today) <= today
+        ]
+
+    teams = sorted(meta.teams, key=lambda team_item: team_item.name.lower())
     context = _base_context(request) | {
         "page_title": "Schedule",
         "current_season": meta.current_season,
         "divisions": meta.divisions,
-        "teams": filtered_teams,
-        "selected_division": division,
-        "selected_team": team,
+        "teams": teams,
+        "selected_divisions": selected_divisions,
+        "selected_teams": selected_teams,
         "selected_view": view,
-        "games_grouped": service.group_games_by_date(schedule_payload.games),
+        "games_grouped": service.group_games_by_date(games),
     }
     return templates.TemplateResponse(request, "schedule.html", context)
 

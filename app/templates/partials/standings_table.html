@@ -8,10 +8,9 @@
         <th>W</th>
         <th>L</th>
         <th>T</th>
-        <th>GF</th>
-        <th>GA</th>
-        <th>GD</th>
+        <th>OTL</th>
         <th>PTS</th>
+        <th>STRK</th>
       </tr>
     </thead>
     <tbody>
@@ -22,10 +21,9 @@
         <td>{{ row.w or "-" }}</td>
         <td>{{ row.l or "-" }}</td>
         <td>{{ row.t or "-" }}</td>
-        <td>{{ row.gf or "-" }}</td>
-        <td>{{ row.ga or "-" }}</td>
-        <td>{{ row.gd or "-" }}</td>
+        <td>{{ row.otl or "-" }}</td>
         <td>{{ row.pts or "-" }}</td>
+        <td>{{ row.streak or "-" }}</td>
       </tr>
       {% endfor %}
     </tbody>

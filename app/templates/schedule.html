@@ -10,32 +10,45 @@
   </div>
 
   <form method="get" action="/schedule" class="filters">
-    <label>
-      Division
-      <select name="division">
-        <option value="">All divisions</option>
-        {% for division in divisions %}
-        <option value="{{ division.id }}" {% if selected_division == division.id %}selected{% endif %}>
-          {{ division.name }}
-        </option>
-        {% endfor %}
-      </select>
-    </label>
-    <label>
-      Team
-      <select name="team">
-        <option value="">All teams</option>
-        {% for team_item in teams %}
-        <option value="{{ team_item.id }}" {% if selected_team == team_item.id %}selected{% endif %}>
-          {{ team_item.name }}
-        </option>
-        {% endfor %}
-      </select>
-    </label>
-    <label>
-      View
+    <div class="filter-field">
+      <span class="filter-label">Division</span>
+      <details class="multi-select">
+        <summary>
+          <span>All divisions{% if selected_divisions %} ({{ selected_divisions|length }}){% endif %}</span>
+        </summary>
+        <div class="multi-select-menu">
+          {% for division in divisions %}
+          <label class="check-option">
+            <input type="checkbox" name="division" value="{{ division.id }}" {% if division.id in selected_divisions %}checked{% endif %}>
+            <span>{{ division.name }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </details>
+    </div>
+
+    <div class="filter-field filter-field-wide">
+      <span class="filter-label">Team</span>
+      <details class="multi-select multi-select-teams">
+        <summary>
+          <span>All teams{% if selected_teams %} ({{ selected_teams|length }}){% endif %}</span>
+        </summary>
+        <div class="multi-select-menu">
+          {% for team_item in teams %}
+          <label class="check-option">
+            <input type="checkbox" name="team" value="{{ team_item.id }}" {% if team_item.id in selected_teams %}checked{% endif %}>
+            <span>{{ team_item.name }}{% if team_item.division_name %} <span class="option-meta">({{ team_item.division_name }})</span>{% endif %}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </details>
+    </div>
+
+    <label class="filter-field">
+      <span class="filter-label">View</span>
       <select name="view">
         <option value="upcoming" {% if selected_view == "upcoming" %}selected{% endif %}>Upcoming</option>
+        <option value="to-date" {% if selected_view == "to-date" %}selected{% endif %}>Season To Date</option>
         <option value="all" {% if selected_view == "all" %}selected{% endif %}>All season</option>
       </select>
     </label>

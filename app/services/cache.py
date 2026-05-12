@@ -29,6 +29,9 @@ class TTLCache:
         self._items[key] = CacheItem(value=value, expires_at=time.time() + ttl_seconds)
         return value
 
+    def delete(self, key: str) -> None:
+        self._items.pop(key, None)
+
     async def get_or_set(
         self, key: str, ttl_seconds: int, loader: Callable[[], Awaitable[Any]]
     ) -> Any:
