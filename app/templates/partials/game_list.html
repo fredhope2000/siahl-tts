@@ -1,31 +1,47 @@
 {% if games_grouped %}
   {% for date_label, games in games_grouped %}
-  <section class="game-group">
+  <section class="game-group" data-game-group>
     <h3>{{ date_label }}</h3>
     <div class="game-table">
       {% for game in games %}
-      <article class="game-row">
+      {% set away_wins = game.away_score is not none and game.home_score is not none and game.away_score > game.home_score %}
+      {% set home_wins = game.away_score is not none and game.home_score is not none and game.home_score > game.away_score %}
+      <article
+        class="game-row"
+        data-game-row
+        data-game-date="{{ game.date_label or '' }}"
+        data-division-id="{{ game.division_id or '' }}"
+        data-home-team-id="{{ game.home_team_id or '' }}"
+        data-away-team-id="{{ game.away_team_id or '' }}"
+      >
         <div class="game-row-main">
           <span class="game-time">{{ game.time_label or "TBD" }}</span>
-          <span class="game-team">{{ game.away_team_name }}</span>
-          {% if game.away_score is not none %}<span class="game-score">{{ game.away_score }}</span>{% endif %}
+          <span class="game-team {% if away_wins %}game-winner{% endif %}">{{ game.away_team_name }}</span>
+          <span class="game-score {% if away_wins %}game-winner{% endif %}">{% if game.away_score is not none %}{{ game.away_score }}{% endif %}</span>
           <span class="game-sep">@</span>
-          <span class="game-team">{{ game.home_team_name }}</span>
-          {% if game.home_score is not none %}<span class="game-score">{{ game.home_score }}</span>{% endif %}
+          <span class="game-team {% if home_wins %}game-winner{% endif %}">{{ game.home_team_name }}</span>
+          <span class="game-score {% if home_wins %}game-winner{% endif %}">{% if game.home_score is not none %}{{ game.home_score }}{% endif %}</span>
         </div>
         <div class="game-row-side">
-          {% if game.venue %}<span class="game-venue">{{ game.venue }}</span>{% endif %}
-          {% if game.status %}<span class="status-pill status-{{ game.status }}">{{ game.status }}</span>{% endif %}
-          <div class="game-links">
-            <a href="{{ game.external_game_url }}" target="_blank" rel="noreferrer">Game</a>
-            <a href="{{ game.external_scorecard_url }}" target="_blank" rel="noreferrer">Scorecard</a>
-          </div>
+          <span class="game-division">{% if game.division_name %}{{ game.division_name }}{% else %}-{% endif %}</span>
+          <span class="game-venue">{% if game.venue %}{{ game.venue }}{% else %}-{% endif %}</span>
+          <span class="status-cell">{% if game.status %}<span class="status-pill status-{{ game.status }}">{{ game.status }}</span>{% else %}-{% endif %}</span>
+          <a class="game-link-cell game-icon-link" href="{{ game.external_game_url }}" target="_blank" rel="noreferrer" aria-label="Open game detail" title="Game detail">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h4a.75.75 0 0 1 0 1.5h-4a.5.5 0 0 0-.5.5v6a.5.5 0 0 0 .5.5h6a.5.5 0 0 0 .5-.5v-4a.75.75 0 0 1 1.5 0v4A1.5 1.5 0 0 1 11.5 13h-6A1.5 1.5 0 0 1 3 11.5z"></path>
+              <path d="M9 3.75A.75.75 0 0 1 9.75 3h3.5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0V5.56l-4.97 4.97a.75.75 0 1 1-1.06-1.06l4.97-4.97H9.75A.75.75 0 0 1 9 3.75"></path>
+            </svg>
+          </a>
+          <a class="game-link-cell game-icon-link" href="{{ game.external_scorecard_url }}" target="_blank" rel="noreferrer" aria-label="Open scorecard" title="Scorecard">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M4.5 2A1.5 1.5 0 0 0 3 3.5v9A1.5 1.5 0 0 0 4.5 14h7a1.5 1.5 0 0 0 1.5-1.5v-7L9.5 2zm0 1.5H9v2A1.5 1.5 0 0 0 10.5 7h2v5.5a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5z"></path>
+              <path d="M5.5 8.25a.75.75 0 0 1 .75-.75h4a.75.75 0 0 1 0 1.5h-4a.75.75 0 0 1-.75-.75m0 2.5A.75.75 0 0 1 6.25 10h4a.75.75 0 0 1 0 1.5h-4a.75.75 0 0 1-.75-.75"></path>
+            </svg>
+          </a>
         </div>
       </article>
       {% endfor %}
     </div>
   </section>
   {% endfor %}
-{% else %}
-<p class="empty-state">No games found for the selected filters.</p>
 {% endif %}

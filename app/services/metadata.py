@@ -128,9 +128,9 @@ class TimeToScoreService:
                             gd=self._int_from(item, ["plusminus", "goal_diff", "gd"]),
                             pts=self._int_from(item, ["pts", "points"]),
                             streak=self._str_from(item, ["streak"]),
+                            tiebreaker=self._str_from(item, ["tiebreaker"]),
                         )
                     )
-            standings.sort(key=lambda item: (-1 * (item.pts or 0), item.team_name))
             payloads.append(
                 StandingsPayload(
                     season_id=self.settings.current_season_id,
@@ -160,15 +160,18 @@ class TimeToScoreService:
 
             raw = await self._fetch_schedule_raw(division_id, team_id, view)
             division_map = None
-            if team_id is None and division_id is not None:
+            division_name_map = None
+            if team_id is None:
                 meta = await self.get_meta()
                 division_map = {team.id: team.division_id for team in meta.teams}
+                division_name_map = {division.id: division.name for division in meta.divisions}
             return self._normalize_schedule(
                 raw,
                 division_id,
                 team_id,
                 view,
                 team_division_map=division_map,
+                division_name_map=division_name_map,
             )
 
         cache_key = f"schedule:{division_id}:{team_id}:{view}"
@@ -227,9 +230,13 @@ class TimeToScoreService:
     def group_games_by_date(self, games: list[Game]) -> list[tuple[str, list[Game]]]:
         grouped: dict[str, list[Game]] = defaultdict(list)
         for game in games:
-            label = game.date_label or "TBD"
-            grouped[label].append(game)
-        return sorted(grouped.items(), key=lambda item: item[0])
+            grouped[game.date_label or "TBD"].append(game)
+        return [
+            (self._format_group_date_label(raw_date), grouped_games)
+            for raw_date, grouped_games in sorted(
+                grouped.items(), key=lambda item: self._group_date_sort_key(item[0])
+            )
+        ]
 
     async def _fetch_schedule_raw(
         self, division_id: int | None, team_id: int | None, view: str
@@ -396,9 +403,9 @@ class TimeToScoreService:
                             gd=self._int_from(item, ["plusminus", "goal_diff", "gd"]),
                             pts=self._int_from(item, ["pts", "points"]),
                             streak=self._str_from(item, ["streak"]),
+                            tiebreaker=self._str_from(item, ["tiebreaker"]),
                         )
                     )
-        standings.sort(key=lambda item: (-1 * (item.pts or 0), item.team_name))
         return StandingsPayload(
             season_id=self.settings.current_season_id,
             division=division,
@@ -412,16 +419,21 @@ class TimeToScoreService:
         team_id: int | None,
         view: str,
         team_division_map: dict[int, int | None] | None = None,
+        division_name_map: dict[int, str] | None = None,
     ) -> SchedulePayload:
         games = [
-            self._normalize_game(item, team_division_map=team_division_map)
+            self._normalize_game(
+                item,
+                team_division_map=team_division_map,
+                division_name_map=division_name_map,
+            )
             for item in raw.get("games", [])
         ]
         if division_id is not None and team_id is None:
             games = [game for game in games if game.division_id == division_id]
         if view == "upcoming":
             games = [game for game in games if game.status != "final"]
-        games.sort(key=lambda item: ((item.date_label or ""), (item.time_label or "")))
+        games.sort(key=self._game_sort_key)
         return SchedulePayload(
             season_id=self.settings.current_season_id,
             filters=ScheduleFilters(division=division_id, team=team_id, view=view),
@@ -464,13 +476,14 @@ class TimeToScoreService:
             for item in roster_raw.get("players", [])
         ]
         games = [self._normalize_game(item) for item in schedule_raw.get("games", [])]
-        games.sort(key=lambda item: ((item.date_label or ""), (item.time_label or "")))
+        games.sort(key=self._game_sort_key)
         return TeamPageData(team=team, roster=roster, games=games)
 
     def _normalize_game(
         self,
         item: dict[str, Any],
         team_division_map: dict[int, int | None] | None = None,
+        division_name_map: dict[int, str] | None = None,
     ) -> Game:
         game_id = self._int_from(item, ["game_id", "id"], 0)
         status = self._normalize_status(item)
@@ -488,11 +501,17 @@ class TimeToScoreService:
             away_division = team_division_map.get(away_team_id)
             if home_division is not None and home_division == away_division:
                 division_id = home_division
+        division_name = self._normalize_division_name(
+            self._str_from(item, ["level_name", "division_name", "div_name"])
+        )
+        if division_name is None and division_id is not None and division_name_map:
+            division_name = division_name_map.get(division_id)
         return Game(
             id=game_id,
             season_id=self._int_from(item, ["season_id"], self.settings.current_season_id)
             or self.settings.current_season_id,
             division_id=division_id,
+            division_name=division_name,
             venue=self._str_from(item, ["location", "rink", "venue"]),
             starts_at=self._str_from(item, ["gmt_time"]),
             date_label=self._str_from(item, ["date", "game_date", "date_label"], "TBD"),
@@ -591,6 +610,31 @@ class TimeToScoreService:
         if normalized.startswith("Adult "):
             normalized = normalized.removeprefix("Adult ").strip()
         return normalized
+
+    def _format_group_date_label(self, value: str | None) -> str:
+        if not value:
+            return "TBD"
+        try:
+            parsed = date.fromisoformat(value)
+        except ValueError:
+            return value
+        return f"{parsed.strftime('%a')} {parsed.isoformat()}"
+
+    def _group_date_sort_key(self, value: str) -> tuple[int, str]:
+        if value == "TBD":
+            return (1, value)
+        try:
+            return (0, date.fromisoformat(value).isoformat())
+        except ValueError:
+            return (0, value)
+
+    def _game_sort_key(self, game: Game) -> tuple[str, str, str, str]:
+        return (
+            game.date_label or "9999-12-31",
+            game.time_label or "ZZZ",
+            game.away_team_name.casefold(),
+            game.home_team_name.casefold(),
+        )
 
     def _mock_meta(self) -> MetaPayload:
         season = Season(

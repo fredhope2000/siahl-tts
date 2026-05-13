@@ -39,6 +39,7 @@ class StandingRow(BaseModel):
     gd: int | None = None
     pts: int | None = None
     streak: str | None = None
+    tiebreaker: str | None = None
 
 
 class RosterPlayer(BaseModel):
@@ -52,6 +53,7 @@ class Game(BaseModel):
     id: int
     season_id: int
     division_id: int | None = None
+    division_name: str | None = None
     venue: str | None = None
     starts_at: str | None = None
     date_label: str | None = None

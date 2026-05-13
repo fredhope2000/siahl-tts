@@ -1,6 +1,17 @@
 {% if standings %}
 <div class="table-wrap">
   <table class="data-table">
+    <colgroup>
+      <col class="col-team">
+      <col class="col-stat">
+      <col class="col-stat">
+      <col class="col-stat">
+      <col class="col-stat">
+      <col class="col-stat-wide">
+      <col class="col-stat-wide">
+      <col class="col-streak">
+      <col class="col-tiebreak">
+    </colgroup>
     <thead>
       <tr>
         <th>Team</th>
@@ -11,6 +22,7 @@
         <th>OTL</th>
         <th>PTS</th>
         <th>STRK</th>
+        <th>TB</th>
       </tr>
     </thead>
     <tbody>
@@ -24,6 +36,7 @@
         <td>{{ row.otl or "-" }}</td>
         <td>{{ row.pts or "-" }}</td>
         <td>{{ row.streak or "-" }}</td>
+        <td>{{ row.tiebreaker or "-" }}</td>
       </tr>
       {% endfor %}
     </tbody>

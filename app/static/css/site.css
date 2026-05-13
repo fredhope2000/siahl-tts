@@ -222,6 +222,62 @@ a:hover {
   min-width: 300px;
 }
 
+.multi-select-actions {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 4px;
+}
+
+.multi-action {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  padding: 2px 0;
+  cursor: pointer;
+  font: inherit;
+  line-height: 1.1;
+  font-size: 0.88rem;
+}
+
+.multi-search-wrap {
+  min-width: 0;
+}
+
+.multi-search {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #fff;
+  font: inherit;
+}
+
+.multi-select-section {
+  display: grid;
+  gap: 6px;
+}
+
+.multi-select-section + .multi-select-section {
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+.multi-select-section-title {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+[data-selected-options],
+[data-available-options] {
+  display: grid;
+  gap: 6px;
+}
+
 .check-option {
   display: grid;
   grid-template-columns: 16px minmax(0, 1fr);
@@ -238,21 +294,12 @@ a:hover {
   color: var(--muted);
 }
 
-.filters select,
-.filters button {
+.filters select {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 10px 12px;
   background: #fff;
   font: inherit;
-}
-
-.filters button {
-  background: var(--accent);
-  color: #fff;
-  cursor: pointer;
-  align-self: end;
-  min-height: 42px;
 }
 
 .table-wrap {
@@ -263,6 +310,27 @@ a:hover {
   width: 100%;
   border-collapse: collapse;
   font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+  table-layout: fixed;
+}
+
+.data-table .col-team {
+  width: auto;
+}
+
+.data-table .col-stat {
+  width: 3.6rem;
+}
+
+.data-table .col-stat-wide {
+  width: 4.4rem;
+}
+
+.data-table .col-streak {
+  width: 6.5rem;
+}
+
+.data-table .col-tiebreak {
+  width: 12.5rem;
 }
 
 .data-table th,
@@ -271,6 +339,24 @@ a:hover {
   border-bottom: 1px solid var(--line);
   text-align: left;
 }
+
+.data-table td:first-child,
+.data-table th:first-child {
+  min-width: 0;
+}
+
+.data-table td:first-child a {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-table td:not(:first-child),
+.data-table th:not(:first-child) {
+  white-space: nowrap;
+}
+
 
 .standings-section + .standings-section {
   margin-top: 22px;
@@ -292,28 +378,36 @@ a:hover {
 
 .game-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(290px, 0.8fr);
+  gap: 10px;
   align-items: center;
   padding: 9px 0;
   border-bottom: 1px solid var(--line);
 }
 
 .game-row-main,
-.game-row-side,
-.game-links,
 .roster-row {
   display: flex;
-  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
 }
 
-.game-row-side {
-  justify-content: flex-end;
+.game-row-main {
+  display: grid;
+  grid-template-columns: 76px minmax(108px, 1fr) 24px 14px minmax(108px, 1fr) 24px;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
 }
 
-.game-links,
+.game-row-side {
+  display: grid;
+  grid-template-columns: minmax(84px, 0.8fr) minmax(96px, 1fr) 72px 28px 28px;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
 .empty-state,
 .roster-row span {
   color: var(--muted);
@@ -321,23 +415,72 @@ a:hover {
 }
 
 .game-time {
-  min-width: 72px;
+  min-width: 76px;
   font-family: "Trebuchet MS", "Gill Sans", sans-serif;
   color: var(--muted);
+  white-space: nowrap;
 }
 
 .game-team {
-  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .game-score {
-  min-width: 12px;
+  min-width: 24px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.game-winner {
+  font-weight: 700;
 }
 
 .game-sep,
+.game-division,
 .game-venue {
   color: var(--muted);
   font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+}
+
+.game-sep {
+  text-align: center;
+}
+
+.game-division,
+.game-venue {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-cell,
+.game-link-cell {
+  text-align: center;
+  min-width: 0;
+}
+
+.game-link-cell {
+  color: var(--accent);
+  font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+}
+
+.game-icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: 0 auto;
+}
+
+.game-icon-link svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
 }
 
 .status-pill {
@@ -377,7 +520,12 @@ a:hover {
   }
 
   .game-row-side {
-    justify-content: flex-start;
+    grid-template-columns: minmax(78px, 0.9fr) minmax(0, 1fr) 72px 28px 28px;
+  }
+
+  .game-row-main {
+    grid-template-columns: 76px minmax(108px, 1fr) 24px 14px minmax(108px, 1fr) 24px;
+    gap: 8px;
   }
 
   .multi-select-menu {

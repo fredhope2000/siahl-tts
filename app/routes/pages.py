@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import date
 
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse
@@ -20,15 +19,6 @@ def _optional_int(value: str | None) -> int | None:
 
 def _optional_int_list(values: list[str] | None) -> list[int]:
     return [int(value) for value in (values or []) if value != ""]
-
-
-def _game_date_label(value: str | None) -> date | None:
-    if not value:
-        return None
-    try:
-        return date.fromisoformat(value)
-    except ValueError:
-        return None
 
 
 def _base_context(request: Request) -> dict:
@@ -97,41 +87,6 @@ async def schedule(
     )
     selected_divisions = _optional_int_list(division)
     selected_teams = _optional_int_list(team)
-    selected_division_set = set(selected_divisions)
-    selected_team_set = set(selected_teams)
-    team_division_map = {team_item.id: team_item.division_id for team_item in meta.teams}
-
-    games = schedule_payload.games
-    if selected_division_set:
-        games = [
-            game
-            for game in games
-            if (
-                game.division_id in selected_division_set
-                or team_division_map.get(game.home_team_id or -1) in selected_division_set
-                or team_division_map.get(game.away_team_id or -1) in selected_division_set
-            )
-        ]
-    if selected_team_set:
-        games = [
-            game
-            for game in games
-            if game.home_team_id in selected_team_set or game.away_team_id in selected_team_set
-        ]
-
-    today = date.today()
-    if view == "upcoming":
-        games = [
-            game
-            for game in games
-            if (_game_date_label(game.date_label) or today) >= today
-        ]
-    elif view == "to-date":
-        games = [
-            game
-            for game in games
-            if (_game_date_label(game.date_label) or today) <= today
-        ]
 
     teams = sorted(meta.teams, key=lambda team_item: team_item.name.lower())
     context = _base_context(request) | {
@@ -142,7 +97,7 @@ async def schedule(
         "selected_divisions": selected_divisions,
         "selected_teams": selected_teams,
         "selected_view": view,
-        "games_grouped": service.group_games_by_date(games),
+        "games_grouped": service.group_games_by_date(schedule_payload.games),
     }
     return templates.TemplateResponse(request, "schedule.html", context)
 

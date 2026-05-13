@@ -9,14 +9,20 @@
     </div>
   </div>
 
-  <form method="get" action="/schedule" class="filters">
+  <form method="get" action="/schedule" class="filters" data-live-schedule>
     <div class="filter-field">
       <span class="filter-label">Division</span>
-      <details class="multi-select">
+      <details class="multi-select" data-multi-select data-default-label="All divisions">
         <summary>
-          <span>All divisions{% if selected_divisions %} ({{ selected_divisions|length }}){% endif %}</span>
+          <span class="multi-select-summary">
+            {% if selected_divisions %}{{ selected_divisions|length }} selected{% else %}All divisions{% endif %}
+          </span>
         </summary>
         <div class="multi-select-menu">
+          <div class="multi-select-actions">
+            <button type="button" class="multi-action" data-action="all">All</button>
+            <button type="button" class="multi-action" data-action="none">None</button>
+          </div>
           {% for division in divisions %}
           <label class="check-option">
             <input type="checkbox" name="division" value="{{ division.id }}" {% if division.id in selected_divisions %}checked{% endif %}>
@@ -29,17 +35,36 @@
 
     <div class="filter-field filter-field-wide">
       <span class="filter-label">Team</span>
-      <details class="multi-select multi-select-teams">
+      <details class="multi-select multi-select-teams" data-multi-select data-default-label="All teams">
         <summary>
-          <span>All teams{% if selected_teams %} ({{ selected_teams|length }}){% endif %}</span>
+          <span class="multi-select-summary">
+            {% if selected_teams %}{{ selected_teams|length }} selected{% else %}All teams{% endif %}
+          </span>
         </summary>
         <div class="multi-select-menu">
-          {% for team_item in teams %}
-          <label class="check-option">
-            <input type="checkbox" name="team" value="{{ team_item.id }}" {% if team_item.id in selected_teams %}checked{% endif %}>
-            <span>{{ team_item.name }}{% if team_item.division_name %} <span class="option-meta">({{ team_item.division_name }})</span>{% endif %}</span>
+          <div class="multi-select-actions">
+            <button type="button" class="multi-action" data-action="all">All</button>
+            <button type="button" class="multi-action" data-action="none">None</button>
+            <button type="button" class="multi-action" data-action="reset">Reset</button>
+          </div>
+          <label class="multi-search-wrap">
+            <input type="search" class="multi-search" placeholder="Filter teams" data-filter-input>
           </label>
-          {% endfor %}
+          <div class="multi-select-section">
+            <p class="multi-select-section-title">Available teams</p>
+            <div data-available-options>
+              {% for team_item in teams %}
+              <label class="check-option" data-filter-option data-division-id="{{ team_item.division_id or '' }}">
+                <input type="checkbox" name="team" value="{{ team_item.id }}" {% if team_item.id in selected_teams %}checked{% endif %}>
+                <span>{{ team_item.name }}{% if team_item.division_name %} <span class="option-meta">({{ team_item.division_name }})</span>{% endif %}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="multi-select-section" data-selected-section hidden>
+            <p class="multi-select-section-title">Selected teams</p>
+            <div data-selected-options></div>
+          </div>
         </div>
       </details>
     </div>
@@ -52,9 +77,9 @@
         <option value="all" {% if selected_view == "all" %}selected{% endif %}>All season</option>
       </select>
     </label>
-    <button type="submit">Apply</button>
   </form>
 
   {% include "partials/game_list.html" %}
+  <p class="empty-state" data-empty-state hidden>No games found for the selected filters.</p>
 </section>
 {% endblock %}
