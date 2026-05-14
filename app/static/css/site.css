@@ -1002,7 +1002,7 @@ a:hover {
 
   .roster-table-mobile th,
   .roster-table-mobile td {
-    padding: 7px 4px;
+    padding: 7px 2px;
   }
 
   .roster-table-mobile .col-roster-number {
@@ -1010,17 +1010,17 @@ a:hover {
   }
 
   .roster-table-mobile .col-gp-mobile {
-    width: 2.2rem;
+    width: 2rem;
   }
 
   .roster-table-mobile .col-stat,
   .roster-table-mobile .col-stat-wide,
   .roster-table-mobile .col-points {
-    width: 2.5rem;
+    width: 2.3rem;
   }
 
   .roster-table-mobile .col-record {
-    width: 4.9rem;
+    width: 4.5rem;
   }
 
   .goalie-table.roster-table-mobile th,
@@ -1029,11 +1029,11 @@ a:hover {
   }
 
   .goalie-table.roster-table-mobile .col-record {
-    width: 4.2rem;
+    width: 4rem;
   }
 
   .goalie-table.roster-table-mobile .col-stat-wide {
-    width: 2.3rem;
+    width: 2.1rem;
   }
 
   .roster-table-mobile td:nth-child(3),
