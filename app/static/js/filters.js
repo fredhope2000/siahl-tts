@@ -504,9 +504,13 @@ function updateTeamScheduleUrl(form, view, order) {
 }
 
 function wireTeamSchedule(form) {
-  const rows = [...document.querySelectorAll("[data-game-row]")];
-  const table = document.querySelector(".game-table-inline");
-  const emptyState = document.querySelector("[data-team-empty-state]");
+  const panel = form.closest(".panel");
+  if (!panel) {
+    return;
+  }
+  const rows = [...panel.querySelectorAll("[data-game-row]")];
+  const table = panel.querySelector(".game-table-inline");
+  const emptyState = panel.querySelector("[data-team-empty-state]");
   const viewSelect = form.querySelector('select[name="view"]');
   const orderSelect = form.querySelector('select[name="order"]');
 

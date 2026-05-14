@@ -14,6 +14,31 @@
   </div>
 </section>
 
+{% if gameday_games_grouped %}
+<section class="panel">
+  <h2>Gameday!</h2>
+  <div class="gameday-list">
+    {% for game in gameday_games %}
+    {% set is_home = game.home_team_id == team.id %}
+    {% set opponent_name = game.away_team_name if is_home else game.home_team_name %}
+    {% set team_locker_room = game.home_locker_room if is_home else game.away_locker_room %}
+    <article class="gameday-card">
+      <p class="eyebrow">TODAY</p>
+      <h3 class="gameday-matchup">
+        {{ "Home (Light jersey)" if is_home else "Away (Dark jersey)" }}
+        {{ "vs" if is_home else "@" }}
+        {{ opponent_name }}
+      </h3>
+      <p class="gameday-time">{{ game.time_label or "TBD" }}</p>
+      <p class="gameday-venue">
+        {{ game.venue or "TBD" }}{% if team_locker_room %} <span class="game-locker-room">{{ team_locker_room }}</span>{% endif %}
+      </p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
 <section class="panel">
   <div class="section-head schedule-head">
     <h2>Schedule</h2>
@@ -36,8 +61,9 @@
       </label>
     </form>
   </div>
-  {% set inline_date_mode = true %}
-  {% include "partials/game_list.html" %}
+  {% with inline_date_mode = true, show_lockers = true, games_grouped = games_grouped %}
+    {% include "partials/game_list.html" %}
+  {% endwith %}
   <p class="empty-state" data-team-empty-state hidden>No games found for the selected filters.</p>
 </section>
 

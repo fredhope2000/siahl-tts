@@ -174,6 +174,12 @@ async def team_page(
         return _redirect_without_refresh(request)
     today_iso = datetime.now(ZoneInfo("America/Los_Angeles")).date().isoformat()
     team_data = await service.get_team_page(team_id)
+    games_with_lockers = await service.apply_locker_rooms(team_data.games)
+    gameday_games = [
+        game.model_copy(update={"date_label": "TODAY"})
+        for game in games_with_lockers
+        if game.date_label == today_iso
+    ]
     context = _base_context(request) | {
         "page_title": team_data.team.name,
         "team": team_data.team,
@@ -181,7 +187,9 @@ async def team_page(
         "selected_view": view,
         "selected_order": order,
         "today_iso": today_iso,
-        "games_grouped": service.group_games_by_date(team_data.games),
+        "gameday_games": gameday_games,
+        "gameday_games_grouped": service.group_games_by_date(gameday_games),
+        "games_grouped": service.group_games_by_date(games_with_lockers),
         "last_refreshed_at": _format_refresh_timestamp(
             service.last_refreshed_at(f"team:{team_id}")
         ),
