@@ -821,16 +821,16 @@ a:hover {
   }
 
   .standings-table .col-record {
-    width: 5.8rem;
+    width: 5.4rem;
   }
 
   .standings-table .col-gp-mobile {
-    width: 3rem;
+    width: 2.4rem;
   }
 
   .standings-table .col-points,
   .standings-table .col-stat-wide {
-    width: 3.2rem;
+    width: 2.5rem;
   }
 
   .standings-table td:nth-child(3),
