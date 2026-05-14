@@ -858,6 +858,42 @@ a:hover {
     grid-area: home-team;
   }
 
+  .game-row:not(.game-row-inline) .game-team-home {
+    position: relative;
+  }
+
+  .game-row:not(.game-row-inline) .game-team-away,
+  .game-row:not(.game-row-inline) .game-team-home {
+    padding-left: 12px;
+  }
+
+  .game-row:not(.game-row-inline) .game-team-home::before {
+    content: "@";
+    position: absolute;
+    left: 0;
+    color: var(--muted);
+    font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+    font-weight: 400;
+  }
+
+  .game-row-inline .game-team-home {
+    position: relative;
+  }
+
+  .game-row-inline .game-team-away,
+  .game-row-inline .game-team-home {
+    padding-left: 12px;
+  }
+
+  .game-row-inline .game-team-home::before {
+    content: "@";
+    position: absolute;
+    left: 0;
+    color: var(--muted);
+    font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+    font-weight: 400;
+  }
+
   .game-score-home {
     grid-area: home-score;
   }
