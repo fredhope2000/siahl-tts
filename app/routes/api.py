@@ -1,11 +1,16 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
 
 router = APIRouter(prefix="/api", tags=["api"])
+
+
+def _pacific_today_iso() -> str:
+    return datetime.now(ZoneInfo("America/Los_Angeles")).date().isoformat()
 
 
 def _optional_int(value: str | None) -> int | None:
@@ -64,11 +69,11 @@ async def schedule(
             for game in games
             if game.home_team_id in selected_teams or game.away_team_id in selected_teams
         ]
-    today = date.today()
+    today = _pacific_today_iso()
     if view == "upcoming":
-        games = [game for game in games if not game.date_label or game.date_label >= today.isoformat()]
+        games = [game for game in games if not game.date_label or game.date_label >= today]
     elif view == "to-date":
-        games = [game for game in games if not game.date_label or game.date_label <= today.isoformat()]
+        games = [game for game in games if not game.date_label or game.date_label <= today]
 
     return {
         "season_id": payload.season_id,

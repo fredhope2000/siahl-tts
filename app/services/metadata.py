@@ -4,6 +4,7 @@ import asyncio
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from app.config import Settings
 from app.models.domain import (
@@ -251,6 +252,9 @@ class TimeToScoreService:
             )
         ]
 
+    def _pacific_today(self) -> date:
+        return datetime.now(ZoneInfo("America/Los_Angeles")).date()
+
     async def _fetch_schedule_raw(
         self, division_id: int | None, team_id: int | None, view: str
     ) -> dict[str, Any]:
@@ -270,7 +274,7 @@ class TimeToScoreService:
             "season_id": self.settings.current_season_id,
         }
         if view == "upcoming":
-            params["date"] = date.today().isoformat()
+            params["date"] = self._pacific_today().isoformat()
             params["days"] = 20
         return await self.client.request("get_schedule_lite", params)
 
