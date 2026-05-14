@@ -7,10 +7,10 @@
 
 <section class="home-stack">
   <article class="panel">
-    <h2 class="home-panel-heading">Divisions</h2>
+    <h2 class="home-panel-heading">Division Standings</h2>
     <div class="chip-list">
       {% for division in divisions %}
-      <a class="chip" href="/standings?division={{ division.id }}">{{ division.name }}</a>
+      <a class="chip" href="/standings?division={{ division.id }}">{{ division.name|replace("Division ", "D") }}</a>
       {% endfor %}
     </div>
   </article>
