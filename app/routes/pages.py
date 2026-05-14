@@ -173,7 +173,10 @@ async def team_page(
         await service.refresh_team_page(team_id)
         return _redirect_without_refresh(request)
     today_iso = datetime.now(ZoneInfo("America/Los_Angeles")).date().isoformat()
-    team_data = await service.get_team_page(team_id)
+    meta, team_data = await asyncio.gather(
+        service.get_meta(),
+        service.get_team_page(team_id),
+    )
     games_with_lockers = await service.apply_locker_rooms(team_data.games)
     gameday_games = [
         game.model_copy(update={"date_label": "TODAY"})
@@ -182,6 +185,7 @@ async def team_page(
     ]
     context = _base_context(request) | {
         "page_title": team_data.team.name,
+        "current_season": meta.current_season,
         "team": team_data.team,
         "roster": team_data.roster,
         "selected_view": view,
