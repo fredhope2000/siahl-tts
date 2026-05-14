@@ -7,6 +7,10 @@
       <p class="eyebrow">{{ current_season.label }}</p>
       <h1>Standings</h1>
     </div>
+    <div class="refresh-meta">
+      {% if last_refreshed_at %}<span>Last refreshed {{ last_refreshed_at }}</span>{% endif %}
+      <a href="/standings?division={{ selected_division }}&refresh=1">Refresh now</a>
+    </div>
   </div>
 
   <form method="get" action="/standings" class="filters">

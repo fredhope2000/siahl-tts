@@ -129,6 +129,16 @@ a:hover {
   margin-bottom: 12px;
 }
 
+.refresh-meta {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  color: var(--muted);
+  font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+  font-size: 0.84rem;
+  text-align: right;
+}
+
 .chip-list,
 .link-list {
   display: flex;

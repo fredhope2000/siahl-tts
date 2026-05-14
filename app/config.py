@@ -35,10 +35,10 @@ class Settings:
         os.getenv("REFRESH_META_INTERVAL_SECONDS", "21600")
     )
     refresh_standings_interval_seconds: int = int(
-        os.getenv("REFRESH_STANDINGS_INTERVAL_SECONDS", "900")
+        os.getenv("REFRESH_STANDINGS_INTERVAL_SECONDS", "600")
     )
     refresh_schedule_interval_seconds: int = int(
-        os.getenv("REFRESH_SCHEDULE_INTERVAL_SECONDS", "900")
+        os.getenv("REFRESH_SCHEDULE_INTERVAL_SECONDS", "600")
     )
     # Development override: normally the app uses live data whenever key/secret exist.
     use_mock_data: bool = _get_bool("USE_MOCK_DATA", False)

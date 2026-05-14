@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Query, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 
@@ -31,6 +31,26 @@ def _base_context(request: Request) -> dict:
         "app_name": settings.app_name,
         "uses_mock_data": service.uses_mock_data,
     }
+
+
+def _format_refresh_timestamp(timestamp: float | None) -> str | None:
+    if timestamp is None:
+        return None
+    dt = datetime.fromtimestamp(timestamp, ZoneInfo("America/Los_Angeles"))
+    return dt.strftime("%b %-d, %Y %-I:%M %p PT")
+
+
+def _redirect_without_refresh(request: Request) -> RedirectResponse:
+    kept_items = [
+        (key, value)
+        for key, value in request.query_params.multi_items()
+        if key != "refresh"
+    ]
+    url = str(request.url.replace(query=""))
+    if kept_items:
+        query = "&".join(f"{key}={value}" for key, value in kept_items)
+        url = f"{url}?{query}"
+    return RedirectResponse(url=url, status_code=303)
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -63,16 +83,26 @@ async def home(request: Request):
 async def standings(
     request: Request,
     division: str | None = Query(default=None),
+    refresh: int | None = Query(default=None),
 ):
     service = request.app.state.tts_service
+    if refresh:
+        if (division or "all") == "all":
+            await service.refresh_all_standings()
+        else:
+            await service.refresh_standings(int(division or "0"))
+        return _redirect_without_refresh(request)
     meta = await service.get_meta()
     selected_division = division or "all"
     standings_payload = None
     all_standings = []
     if selected_division == "all":
         all_standings = await service.get_all_standings()
+        refreshed_at = service.last_refreshed_at("standings:all")
     else:
-        standings_payload = await service.get_standings(int(selected_division))
+        division_id = int(selected_division)
+        standings_payload = await service.get_standings(division_id)
+        refreshed_at = service.last_refreshed_at(f"standings:{division_id}")
     context = _base_context(request) | {
         "page_title": "Standings",
         "current_season": meta.current_season,
@@ -80,6 +110,7 @@ async def standings(
         "selected_division": selected_division,
         "standings_payload": standings_payload,
         "all_standings": all_standings,
+        "last_refreshed_at": _format_refresh_timestamp(refreshed_at),
     }
     return templates.TemplateResponse(request, "standings.html", context)
 
@@ -91,8 +122,12 @@ async def schedule(
     team: list[str] | None = Query(default=None),
     view: str = Query(default="upcoming", pattern="^(upcoming|last-3|to-date|all)$"),
     order: str = Query(default="oldest", pattern="^(oldest|newest)$"),
+    refresh: int | None = Query(default=None),
 ):
     service = request.app.state.tts_service
+    if refresh:
+        await service.refresh_schedule(view="all")
+        return _redirect_without_refresh(request)
     today_iso = datetime.now(ZoneInfo("America/Los_Angeles")).date().isoformat()
     meta, schedule_payload = await asyncio.gather(
         service.get_meta(),
@@ -113,18 +148,31 @@ async def schedule(
         "selected_order": order,
         "today_iso": today_iso,
         "games_grouped": service.group_games_by_date(schedule_payload.games),
+        "last_refreshed_at": _format_refresh_timestamp(
+            service.last_refreshed_at("schedule:None:None:all")
+        ),
     }
     return templates.TemplateResponse(request, "schedule.html", context)
 
 
 @router.get("/teams/{team_id}", response_class=HTMLResponse)
-async def team_page(request: Request, team_id: int):
+async def team_page(
+    request: Request,
+    team_id: int,
+    refresh: int | None = Query(default=None),
+):
     service = request.app.state.tts_service
+    if refresh:
+        await service.refresh_team_page(team_id)
+        return _redirect_without_refresh(request)
     team_data = await service.get_team_page(team_id)
     context = _base_context(request) | {
         "page_title": team_data.team.name,
         "team": team_data.team,
         "roster": team_data.roster,
         "games_grouped": service.group_games_by_date(team_data.games),
+        "last_refreshed_at": _format_refresh_timestamp(
+            service.last_refreshed_at(f"team:{team_id}")
+        ),
     }
     return templates.TemplateResponse(request, "team.html", context)

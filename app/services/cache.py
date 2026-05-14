@@ -10,6 +10,7 @@ from typing import Any
 class CacheItem:
     value: Any
     expires_at: float
+    refreshed_at: float
 
 
 class TTLCache:
@@ -26,8 +27,15 @@ class TTLCache:
         return item.value
 
     def set(self, key: str, value: Any, ttl_seconds: int) -> Any:
-        self._items[key] = CacheItem(value=value, expires_at=time.time() + ttl_seconds)
+        now = time.time()
+        self._items[key] = CacheItem(value=value, expires_at=now + ttl_seconds, refreshed_at=now)
         return value
+
+    def refreshed_at(self, key: str) -> float | None:
+        item = self._items.get(key)
+        if item is None:
+            return None
+        return item.refreshed_at
 
     def delete(self, key: str) -> None:
         self._items.pop(key, None)

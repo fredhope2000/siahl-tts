@@ -84,6 +84,11 @@ class TimeToScoreService:
             f"standings:{division_id}", self.settings.cache_ttl_standings, loader
         )
 
+    async def refresh_standings(self, division_id: int) -> StandingsPayload:
+        cache_key = f"standings:{division_id}"
+        self.cache.delete(cache_key)
+        return await self.get_standings(division_id)
+
     async def get_all_standings(self) -> list[StandingsPayload]:
         if self.uses_mock_data:
             meta = self._mock_meta()
@@ -147,6 +152,9 @@ class TimeToScoreService:
         for division in meta.divisions:
             self.cache.delete(f"standings:{division.id}")
         return await self.get_all_standings()
+
+    def last_refreshed_at(self, key: str) -> float | None:
+        return self.cache.refreshed_at(key)
 
     async def get_schedule(
         self,
@@ -219,6 +227,11 @@ class TimeToScoreService:
         return await self.cache.get_or_set(
             f"team:{team_id}", self.settings.cache_ttl_team, loader
         )
+
+    async def refresh_team_page(self, team_id: int) -> TeamPageData:
+        cache_key = f"team:{team_id}"
+        self.cache.delete(cache_key)
+        return await self.get_team_page(team_id)
 
     async def prewarm_hot_data(self) -> None:
         await self.refresh_meta()

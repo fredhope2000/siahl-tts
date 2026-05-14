@@ -60,15 +60,15 @@ TTS_API_BASE="https://api.sharksice.timetoscore.com"
 TTS_SITE_BASE="https://stats.sharksice.timetoscore.com"
 PREWARM_ON_STARTUP=true
 REFRESH_META_INTERVAL_SECONDS=21600
-REFRESH_STANDINGS_INTERVAL_SECONDS=900
-REFRESH_SCHEDULE_INTERVAL_SECONDS=900
+REFRESH_STANDINGS_INTERVAL_SECONDS=600
+REFRESH_SCHEDULE_INTERVAL_SECONDS=600
 ```
 
 Only set overrides if you want behavior different from those defaults. Example:
 
 ```bash
 export USE_MOCK_DATA=true
-export REFRESH_STANDINGS_INTERVAL_SECONDS=1800
+export REFRESH_STANDINGS_INTERVAL_SECONDS=600
 ```
 
 ## Cache And Refresh
@@ -79,8 +79,8 @@ Current default behavior:
 
 - prewarm metadata, all standings, and upcoming schedule on startup
 - refresh metadata every 6 hours
-- refresh standings every 15 minutes
-- refresh upcoming schedule every 15 minutes
+- refresh standings every 10 minutes
+- refresh upcoming schedule every 10 minutes
 
 The cache is process-local, so each app worker maintains its own cache.
 

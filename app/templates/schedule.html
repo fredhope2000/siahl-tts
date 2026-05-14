@@ -7,6 +7,10 @@
       <p class="eyebrow">{{ current_season.label }}</p>
       <h1>Schedule</h1>
     </div>
+    <div class="refresh-meta">
+      {% if last_refreshed_at %}<span>Last refreshed {{ last_refreshed_at }}</span>{% endif %}
+      <a href="/schedule?view={{ selected_view }}&order={{ selected_order }}{% for division_id in selected_divisions %}&division={{ division_id }}{% endfor %}{% for team_id in selected_teams %}&team={{ team_id }}{% endfor %}&refresh=1">Refresh now</a>
+    </div>
   </div>
 
   <form method="get" action="/schedule" class="filters" data-live-schedule data-today-iso="{{ today_iso }}">

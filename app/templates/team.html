@@ -2,8 +2,16 @@
 
 {% block content %}
 <section class="panel">
-  <p class="eyebrow">{{ team.division_name or "Team" }}</p>
-  <h1>{{ team.name }}</h1>
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">{{ team.division_name or "Team" }}</p>
+      <h1>{{ team.name }}</h1>
+    </div>
+    <div class="refresh-meta">
+      {% if last_refreshed_at %}<span>Last refreshed {{ last_refreshed_at }}</span>{% endif %}
+      <a href="/teams/{{ team.id }}?refresh=1">Refresh now</a>
+    </div>
+  </div>
 </section>
 
 <section class="panel">
