@@ -279,7 +279,7 @@ class TimeToScoreService:
         assignments = await self.get_locker_room_assignments()
         merged: list[Game] = []
         for game in games:
-            assignment = assignments.get(game.id)
+            assignment = assignments.get(game.id) or self._temporary_locker_room_override(game)
             if not assignment:
                 merged.append(game)
                 continue
@@ -603,6 +603,20 @@ class TimeToScoreService:
             external_game_url=f"{site_base}/test/game.php?game={game_id}",
             external_scorecard_url=external_scorecard_url,
         )
+
+    def _temporary_locker_room_override(
+        self, game: Game
+    ) -> dict[str, str | None] | None:
+        if (
+            game.date_label == self._pacific_today().isoformat()
+            and game.home_team_name == "Rebel Scum 4"
+            and game.away_team_name == "Rebels"
+        ):
+            return {
+                "home_locker_room": "G5",
+                "away_locker_room": "G7",
+            }
+        return None
 
     def _parse_locker_room_assignments(self, html: str) -> dict[int, dict[str, str | None]]:
         parser = _LockerRoomTableParser()

@@ -29,14 +29,14 @@
       </div>
     </details>
   </article>
-</section>
 
-<section class="panel">
-  <div class="section-head">
-    <h2>Recent Games</h2>
-    <a href="/schedule">Full schedule</a>
-  </div>
-  {% set show_lockers = true %}
-  {% include "partials/game_list.html" %}
+  <article class="panel">
+    <div class="section-head">
+      <h2>Recent Games</h2>
+      <a href="/schedule">Full schedule</a>
+    </div>
+    {% set show_lockers = true %}
+    {% include "partials/game_list.html" %}
+  </article>
 </section>
 {% endblock %}

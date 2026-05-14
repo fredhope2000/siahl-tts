@@ -134,7 +134,7 @@ a:hover {
 
 .home-stack {
   display: grid;
-  gap: 18px;
+  gap: 4px;
 }
 
 .section-head {
@@ -537,11 +537,19 @@ a:hover {
   font-size: 1.15rem;
 }
 
-.gameday-time,
-.gameday-venue {
+.gameday-meta {
   margin: 0;
   color: var(--muted);
   font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+}
+
+.gameday-meta-sep {
+  margin: 0 6px;
+}
+
+.team-header-panel {
+  padding-top: 14px;
+  padding-bottom: 14px;
 }
 
 .roster-head {
@@ -567,6 +575,10 @@ a:hover {
 
 .panel + .panel {
   margin-top: 18px;
+}
+
+.panel.team-panel + .panel.team-panel {
+  margin-top: 4px;
 }
 
 .game-group + .game-group {
