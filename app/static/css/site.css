@@ -1023,6 +1023,19 @@ a:hover {
     width: 4.9rem;
   }
 
+  .goalie-table.roster-table-mobile th,
+  .goalie-table.roster-table-mobile td {
+    padding: 7px 3px;
+  }
+
+  .goalie-table.roster-table-mobile .col-record {
+    width: 4.6rem;
+  }
+
+  .goalie-table.roster-table-mobile .col-stat-wide {
+    width: 2.3rem;
+  }
+
   .roster-table-mobile td:nth-child(3),
   .roster-table-mobile th:nth-child(3),
   .roster-table-mobile td:nth-child(4),
