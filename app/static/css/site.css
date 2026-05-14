@@ -998,11 +998,25 @@ a:hover {
 
   .roster-table-mobile {
     display: table;
+    width: 100%;
+    max-width: 100%;
   }
 
   .roster-table-mobile th,
   .roster-table-mobile td {
     padding: 7px 2px;
+  }
+
+  .roster-table-mobile .col-roster-name {
+    width: 0;
+  }
+
+  .roster-table-mobile td:nth-child(2),
+  .roster-table-mobile th:nth-child(2) {
+    width: auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .roster-table-mobile .col-roster-number {
@@ -1034,6 +1048,10 @@ a:hover {
 
   .goalie-table.roster-table-mobile .col-stat-wide {
     width: 2.1rem;
+  }
+
+  .team-panel .table-wrap {
+    overflow-x: hidden;
   }
 
   .roster-table-mobile td:nth-child(3),
