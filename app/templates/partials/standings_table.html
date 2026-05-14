@@ -1,42 +1,24 @@
 {% if standings %}
 <div class="table-wrap">
-  <table class="data-table">
+  <table class="data-table standings-table-compact">
     <colgroup>
       <col class="col-team">
-      <col class="col-stat">
-      <col class="col-stat">
-      <col class="col-stat">
-      <col class="col-stat">
-      <col class="col-stat-wide">
-      <col class="col-stat-wide">
-      <col class="col-streak">
-      <col class="col-tiebreak">
+      <col class="col-record">
+      <col class="col-points">
     </colgroup>
     <thead>
       <tr>
         <th>Team</th>
-        <th>GP</th>
-        <th>W</th>
-        <th>L</th>
-        <th>T</th>
-        <th>OTL</th>
+        <th>Record</th>
         <th>PTS</th>
-        <th>STRK</th>
-        <th>TB</th>
       </tr>
     </thead>
     <tbody>
       {% for row in standings %}
       <tr>
         <td><a href="/teams/{{ row.team_id }}">{{ row.team_name }}</a></td>
-        <td>{{ row.gp or "-" }}</td>
-        <td>{{ row.w or "-" }}</td>
-        <td>{{ row.l or "-" }}</td>
-        <td>{{ row.t or "-" }}</td>
-        <td>{{ row.otl or "-" }}</td>
+        <td>{{ row.w or 0 }}-{{ row.l or 0 }}-{{ row.t or 0 }}-{{ row.otl or 0 }}</td>
         <td>{{ row.pts or "-" }}</td>
-        <td>{{ row.streak or "-" }}</td>
-        <td>{{ row.tiebreaker or "-" }}</td>
       </tr>
       {% endfor %}
     </tbody>
