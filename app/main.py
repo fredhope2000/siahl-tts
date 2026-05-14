@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+from pathlib import Path
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -10,12 +11,13 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.routes.api import router as api_router
-from app.routes.pages import router as pages_router
+from app.routes.pages import router as pages_router, templates
 from app.services.cache import TTLCache
 from app.services.metadata import TimeToScoreService
 from app.services.tts_client import TimeToScoreClient
 
 logger = logging.getLogger(__name__)
+STATIC_ROOT = Path("app/static")
 
 
 async def _refresh_loop(app: FastAPI) -> None:
@@ -70,6 +72,13 @@ def create_app() -> FastAPI:
     app = FastAPI(title=settings.app_name, lifespan=lifespan)
     app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
+    def static_asset(path: str) -> str:
+        version = "0"
+        asset_path = STATIC_ROOT / path
+        if asset_path.exists():
+            version = str(int(asset_path.stat().st_mtime))
+        return f"/static/{path}?v={version}"
+
     cache = TTLCache()
     client = TimeToScoreClient(settings)
     app.state.settings = settings
@@ -77,6 +86,7 @@ def create_app() -> FastAPI:
 
     app.include_router(pages_router)
     app.include_router(api_router)
+    templates.env.globals["static_asset"] = static_asset
     return app
 
 
