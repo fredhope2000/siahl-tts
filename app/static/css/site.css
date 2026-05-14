@@ -1008,12 +1008,12 @@ a:hover {
   }
 
   .roster-table-mobile .col-roster-name {
-    width: 0;
+    width: auto;
   }
 
   .roster-table-mobile td:nth-child(2),
   .roster-table-mobile th:nth-child(2) {
-    width: auto;
+    width: 45%;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
