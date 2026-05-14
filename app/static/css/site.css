@@ -864,7 +864,7 @@ a:hover {
 
   .game-row:not(.game-row-inline) .game-team-away,
   .game-row:not(.game-row-inline) .game-team-home {
-    padding-left: 12px;
+    padding-left: 14px;
   }
 
   .game-row:not(.game-row-inline) .game-team-home::before {
@@ -882,7 +882,7 @@ a:hover {
 
   .game-row-inline .game-team-away,
   .game-row-inline .game-team-home {
-    padding-left: 12px;
+    padding-left: 14px;
   }
 
   .game-row-inline .game-team-home::before {
