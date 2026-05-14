@@ -16,24 +16,24 @@
           data-away-team-id="{{ game.away_team_id or '' }}"
         >
           <div class="game-row-main game-row-main-inline">
-            <span class="game-datetime-inline">{{ date_label }} {{ game.time_label or "TBD" }}</span>
-            <span class="game-team {% if away_wins %}game-winner{% endif %}">
+            <span class="game-datetime-inline game-datetime-mobile-anchor">{{ date_label }} {{ game.time_label or "TBD" }}</span>
+            <span class="game-team game-team-away {% if away_wins %}game-winner{% endif %}">
               {% if game.away_team_id %}
               <a class="game-team-link" href="/teams/{{ game.away_team_id }}">{{ game.away_team_name }}</a>
               {% else %}
               {{ game.away_team_name }}
               {% endif %}
             </span>
-            <span class="game-score {% if away_wins %}game-winner{% endif %}">{% if game.away_score is not none %}{{ game.away_score }}{% endif %}</span>
-            <span class="game-sep">@</span>
-            <span class="game-team {% if home_wins %}game-winner{% endif %}">
+            <span class="game-score game-score-away {% if away_wins %}game-winner{% endif %}">{% if game.away_score is not none %}{{ game.away_score }}{% endif %}</span>
+            <span class="game-sep game-sep-mobile">@</span>
+            <span class="game-team game-team-home {% if home_wins %}game-winner{% endif %}">
               {% if game.home_team_id %}
               <a class="game-team-link" href="/teams/{{ game.home_team_id }}">{{ game.home_team_name }}</a>
               {% else %}
               {{ game.home_team_name }}
               {% endif %}
             </span>
-            <span class="game-score {% if home_wins %}game-winner{% endif %}">{% if game.home_score is not none %}{{ game.home_score }}{% endif %}</span>
+            <span class="game-score game-score-home {% if home_wins %}game-winner{% endif %}">{% if game.home_score is not none %}{{ game.home_score }}{% endif %}</span>
           </div>
           <div class="game-row-side game-row-side-inline">
             <span class="game-venue">{% if game.venue %}{{ game.venue }}{% else %}-{% endif %}</span>
@@ -63,6 +63,8 @@
       {% for game in games %}
       {% set away_wins = game.away_score is not none and game.home_score is not none and game.away_score > game.home_score %}
       {% set home_wins = game.away_score is not none and game.home_score is not none and game.home_score > game.away_score %}
+      {% set short_division = game.division_name|replace('Division ', 'D') if game.division_name else '' %}
+      {% set short_venue = game.venue|replace('San Jose ', '') if game.venue else '' %}
       <article
         class="game-row"
         data-game-row
@@ -73,24 +75,29 @@
         data-away-team-id="{{ game.away_team_id or '' }}"
       >
         <div class="game-row-main">
-          <span class="game-time">{{ game.time_label or "TBD" }}</span>
-          <span class="game-team {% if away_wins %}game-winner{% endif %}">
+          <span class="game-time game-datetime-mobile-anchor">{{ game.time_label or "TBD" }}</span>
+          <span class="game-mobile-meta" title="{% if game.division_name or game.venue %}{{ game.division_name or '' }}{% if game.division_name and game.venue %} | {% endif %}{{ game.venue or '' }}{% endif %}">
+            {% if short_division %}<span>{{ short_division }}</span>{% endif %}
+            {% if short_division and short_venue %}<span class="game-mobile-meta-sep">•</span>{% endif %}
+            {% if short_venue %}<span>{{ short_venue }}</span>{% endif %}
+          </span>
+          <span class="game-team game-team-away {% if away_wins %}game-winner{% endif %}">
             {% if game.away_team_id %}
             <a class="game-team-link" href="/teams/{{ game.away_team_id }}">{{ game.away_team_name }}</a>
             {% else %}
             {{ game.away_team_name }}
             {% endif %}
           </span>
-          <span class="game-score {% if away_wins %}game-winner{% endif %}">{% if game.away_score is not none %}{{ game.away_score }}{% endif %}</span>
-          <span class="game-sep">@</span>
-          <span class="game-team {% if home_wins %}game-winner{% endif %}">
+          <span class="game-score game-score-away {% if away_wins %}game-winner{% endif %}">{% if game.away_score is not none %}{{ game.away_score }}{% endif %}</span>
+          <span class="game-sep game-sep-mobile">@</span>
+          <span class="game-team game-team-home {% if home_wins %}game-winner{% endif %}">
             {% if game.home_team_id %}
             <a class="game-team-link" href="/teams/{{ game.home_team_id }}">{{ game.home_team_name }}</a>
             {% else %}
             {{ game.home_team_name }}
             {% endif %}
           </span>
-          <span class="game-score {% if home_wins %}game-winner{% endif %}">{% if game.home_score is not none %}{{ game.home_score }}{% endif %}</span>
+          <span class="game-score game-score-home {% if home_wins %}game-winner{% endif %}">{% if game.home_score is not none %}{{ game.home_score }}{% endif %}</span>
         </div>
         <div class="game-row-side">
           <span class="game-division">{% if game.division_name %}{{ game.division_name }}{% else %}-{% endif %}</span>
