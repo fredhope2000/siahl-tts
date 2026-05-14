@@ -464,17 +464,9 @@ class TimeToScoreService:
                 self._str_from(current_level or {}, ["level_name"])
             ),
         )
-        roster = [
-            RosterPlayer(
-                id=self._int_from(item, ["player_id", "id"]),
-                name=self._clean_name(
-                    self._str_from(item, ["player_name", "name"], "Unknown Player")
-                ),
-                jersey_number=self._str_from(item, ["jersey", "jersey_number", "number"]),
-                position=self._str_from(item, ["position"]),
-            )
-            for item in roster_raw.get("players", [])
-        ]
+        roster: list[RosterPlayer] = []
+        for item in roster_raw.get("players", []):
+            roster.extend(self._normalize_roster_entries(item))
         games = [self._normalize_game(item) for item in schedule_raw.get("games", [])]
         games.sort(key=self._game_sort_key)
         return TeamPageData(team=team, roster=roster, games=games)
@@ -596,8 +588,102 @@ class TimeToScoreService:
                 continue
         return default
 
+    def _float_from(
+        self, item: dict[str, Any], keys: list[str], default: float | None = None
+    ) -> float | None:
+        for key in keys:
+            value = item.get(key)
+            if value in (None, ""):
+                continue
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                continue
+        return default
+
     def _clean_name(self, value: str | None) -> str:
         return (value or "").strip()
+
+    def _is_goalie_row(self, item: dict[str, Any]) -> bool:
+        position = (self._str_from(item, ["position"], "") or "").strip().upper()
+        if position == "G":
+            return True
+        goalie_games = self._int_from(item, ["goalie_games_played", "goalie_games"], 0) or 0
+        return goalie_games > 0
+
+    def _save_pct_from_row(self, item: dict[str, Any]) -> float | None:
+        saves = self._int_from(item, ["saves"])
+        shots_against = self._int_from(item, ["shots_against"])
+        if saves is None or shots_against in (None, 0):
+            return None
+        return saves / shots_against
+
+    def _normalize_roster_entries(self, item: dict[str, Any]) -> list[RosterPlayer]:
+        player_id = self._int_from(item, ["player_id", "id"])
+        name = self._clean_name(
+            self._str_from(item, ["player_name", "name"], "Unknown Player")
+        )
+        jersey_number = self._str_from(item, ["jersey", "jersey_number", "number"])
+        position = self._str_from(item, ["position"])
+        total_gp = self._int_from(item, ["games_played", "gp"])
+        goalie_gp = self._int_from(item, ["goalie_games_played", "goalie_games"], 0) or 0
+        is_goalie = self._is_goalie_row(item)
+
+        entries: list[RosterPlayer] = []
+        site_base = self.settings.tts_site_base.rstrip("/")
+        external_player_url = (
+            f"{site_base}/test/player.php?player={player_id}&league={self.settings.league_id}&season={self.settings.current_season_id}"
+            if player_id is not None
+            else None
+        )
+
+        if not is_goalie or (total_gp is not None and total_gp > goalie_gp):
+            skater_gp = total_gp
+            if is_goalie and total_gp is not None:
+                skater_gp = max(total_gp - goalie_gp, 0)
+            entries.append(
+                RosterPlayer(
+                    id=player_id,
+                    name=name,
+                    external_player_url=external_player_url,
+                    jersey_number=jersey_number,
+                    position=position,
+                    is_goalie=False,
+                    gp=skater_gp,
+                    g=self._int_from(item, ["goals", "g"]),
+                    a=self._int_from(item, ["assists", "a"]),
+                    pts=self._int_from(item, ["points", "pts"]),
+                    pim=self._int_from(item, ["pims", "pim"]),
+                )
+            )
+
+        if is_goalie:
+            gaa = self._float_from(item, ["goals_against_ave", "gaa"])
+            so = self._int_from(item, ["shutouts", "so"])
+            if goalie_gp == 0:
+                if gaa == 0:
+                    gaa = None
+                if so == 0:
+                    so = None
+            entries.append(
+                RosterPlayer(
+                    id=player_id,
+                    name=name,
+                    external_player_url=external_player_url,
+                    jersey_number=jersey_number,
+                    position=position,
+                    is_goalie=True,
+                    gp=goalie_gp,
+                    w=self._int_from(item, ["wins", "w"]),
+                    l=self._int_from(item, ["losses", "l"]),
+                    otl=self._int_from(item, ["ot_losses", "otlosses", "otl"]),
+                    gaa=gaa,
+                    save_pct=self._save_pct_from_row(item),
+                    so=so,
+                )
+            )
+
+        return entries
 
     def _division_sort_key(self, value: str) -> tuple[int, str]:
         digits = "".join(character for character in value if character.isdigit())

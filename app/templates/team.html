@@ -8,21 +8,124 @@
 
 <section class="panel">
   <h2>Schedule</h2>
+  {% set inline_date_mode = true %}
   {% include "partials/game_list.html" %}
 </section>
 
 <section class="panel">
-  <h2>Roster</h2>
-  {% if roster %}
-  <div class="roster-list">
-    {% for player in roster %}
-    <div class="roster-row">
-      <strong>{{ player.name }}</strong>
-      <span>{{ player.position or "" }}</span>
-      <span>{{ player.jersey_number or "" }}</span>
-    </div>
-    {% endfor %}
+  <div class="roster-head">
+    <h2>Roster</h2>
+    <label class="roster-toggle">
+      <input type="checkbox" data-roster-toggle checked>
+      <span>Only show players with &gt;0 games played</span>
+    </label>
   </div>
+  {% if roster %}
+  {% set skaters = roster | rejectattr("is_goalie") | list %}
+  {% set goalies = roster | selectattr("is_goalie") | list %}
+  {% if skaters %}
+  <section data-roster-block>
+  <h3 class="roster-subhead">Skaters</h3>
+  <div class="table-wrap">
+    <table class="data-table roster-table">
+      <colgroup>
+        <col class="col-roster-number">
+        <col class="col-roster-name">
+        <col class="col-stat">
+        <col class="col-stat">
+        <col class="col-stat">
+        <col class="col-stat-wide">
+        <col class="col-stat-wide">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Player</th>
+          <th>GP</th>
+          <th>G</th>
+          <th>A</th>
+          <th>PTS</th>
+          <th>PIM</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for player in skaters %}
+        <tr data-roster-row data-gp="{{ player.gp if player.gp is not none else '' }}">
+          <td>{{ player.jersey_number or "" }}</td>
+          <td>
+            {% if player.external_player_url %}
+            <strong><a href="{{ player.external_player_url }}" target="_blank" rel="noreferrer">{{ player.name }}</a></strong>
+            {% else %}
+            <strong>{{ player.name }}</strong>
+            {% endif %}
+          </td>
+          <td>{{ player.gp if player.gp is not none else "-" }}</td>
+          <td>{{ player.g if player.g is not none else "-" }}</td>
+          <td>{{ player.a if player.a is not none else "-" }}</td>
+          <td>{{ player.pts if player.pts is not none else "-" }}</td>
+          <td>{{ player.pim if player.pim is not none else "-" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  </section>
+  {% endif %}
+
+  {% if goalies %}
+  <section data-roster-block>
+  <h3 class="roster-subhead">Goalies</h3>
+  <div class="table-wrap">
+    <table class="data-table roster-table goalie-table">
+      <colgroup>
+        <col class="col-roster-number">
+        <col class="col-roster-name">
+        <col class="col-stat">
+        <col class="col-stat">
+        <col class="col-stat">
+        <col class="col-stat">
+        <col class="col-stat-wide">
+        <col class="col-stat-wide">
+        <col class="col-stat">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Player</th>
+          <th>GP</th>
+          <th>W</th>
+          <th>L</th>
+          <th>OTL</th>
+          <th>GAA</th>
+          <th>SV%</th>
+          <th>SO</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for player in goalies %}
+        <tr data-roster-row data-gp="{{ player.gp if player.gp is not none else '' }}">
+          <td>{{ player.jersey_number or "" }}</td>
+          <td>
+            {% if player.external_player_url %}
+            <strong><a href="{{ player.external_player_url }}" target="_blank" rel="noreferrer">{{ player.name }}</a></strong>
+            {% else %}
+            <strong>{{ player.name }}</strong>
+            {% endif %}
+          </td>
+          <td>{{ player.gp if player.gp is not none else "-" }}</td>
+          <td>{{ player.w if player.w is not none else "-" }}</td>
+          <td>{{ player.l if player.l is not none else "-" }}</td>
+          <td>{{ player.otl if player.otl is not none else "-" }}</td>
+          <td>{% if player.gaa is not none %}{{ "%.2f"|format(player.gaa) }}{% else %}-{% endif %}</td>
+          <td>{% if player.save_pct is not none %}{{ "%.3f"|format(player.save_pct) }}{% else %}-{% endif %}</td>
+          <td>{{ player.so if player.so is not none else "-" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  </section>
+  {% endif %}
   {% else %}
   <p class="empty-state">No roster available.</p>
   {% endif %}

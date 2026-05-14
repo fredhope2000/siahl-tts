@@ -9,7 +9,7 @@ client = TestClient(app)
 def test_home_page_renders() -> None:
     response = client.get("/")
     assert response.status_code == 200
-    assert "Upcoming Games" in response.text
+    assert "Recent Games" in response.text
     assert "Season 74" in response.text
 
 

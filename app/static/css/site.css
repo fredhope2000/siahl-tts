@@ -116,6 +116,11 @@ a:hover {
   gap: 22px;
 }
 
+.home-stack {
+  display: grid;
+  gap: 18px;
+}
+
 .section-head {
   display: flex;
   justify-content: space-between;
@@ -146,6 +151,26 @@ a:hover {
   align-items: flex-start;
 }
 
+.panel .home-panel-heading {
+  margin: 0 0 12px;
+}
+
+.home-team-picker {
+  max-width: 360px;
+}
+
+.home-team-picker .multi-select-menu {
+  width: 100%;
+  max-height: 320px;
+}
+
+.home-team-results {
+  gap: 8px;
+  max-height: 232px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;
@@ -170,6 +195,19 @@ a:hover {
 .filter-label {
   color: var(--muted);
   font-size: 0.88rem;
+}
+
+.filter-label-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .multi-select {
@@ -222,12 +260,8 @@ a:hover {
   min-width: 300px;
 }
 
-.multi-select-actions {
-  display: flex;
-  gap: 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 4px;
+.multi-select-divisions .multi-select-menu {
+  max-height: 438px;
 }
 
 .multi-action {
@@ -333,6 +367,14 @@ a:hover {
   width: 12.5rem;
 }
 
+.data-table .col-roster-number {
+  width: 3.2rem;
+}
+
+.data-table .col-roster-name {
+  width: auto;
+}
+
 .data-table th,
 .data-table td {
   padding: 9px 10px;
@@ -357,6 +399,21 @@ a:hover {
   white-space: nowrap;
 }
 
+.roster-table td:first-child,
+.roster-table th:first-child,
+.roster-table td:nth-child(n + 3),
+.roster-table th:nth-child(n + 3) {
+  text-align: center;
+}
+
+.goalie-table .col-stat {
+  width: 3.3rem;
+}
+
+.goalie-table .col-stat-wide {
+  width: 4rem;
+}
+
 
 .standings-section + .standings-section {
   margin-top: 22px;
@@ -364,6 +421,35 @@ a:hover {
 
 .standings-subhead {
   margin: 0 0 10px;
+}
+
+.roster-subhead {
+  margin: 14px 0 10px;
+}
+
+.roster-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.roster-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+  font-size: 0.92rem;
+}
+
+.roster-toggle input {
+  margin: 0;
+}
+
+.panel + .panel {
+  margin-top: 18px;
 }
 
 .game-group + .game-group {
@@ -376,6 +462,10 @@ a:hover {
   border-top: 1px solid var(--line);
 }
 
+.game-table-inline {
+  margin-top: 10px;
+}
+
 .game-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(290px, 0.8fr);
@@ -383,6 +473,10 @@ a:hover {
   align-items: center;
   padding: 9px 0;
   border-bottom: 1px solid var(--line);
+}
+
+.game-row-inline {
+  grid-template-columns: minmax(0, 1.15fr) minmax(220px, 0.7fr);
 }
 
 .game-row-main,
@@ -400,12 +494,20 @@ a:hover {
   min-width: 0;
 }
 
+.game-row-main-inline {
+  grid-template-columns: 184px minmax(82px, 1fr) 24px 14px minmax(82px, 1fr) 24px;
+}
+
 .game-row-side {
   display: grid;
   grid-template-columns: minmax(84px, 0.8fr) minmax(96px, 1fr) 72px 28px 28px;
   gap: 8px;
   align-items: center;
   min-width: 0;
+}
+
+.game-row-side-inline {
+  grid-template-columns: minmax(0, 1fr) 72px 28px 28px;
 }
 
 .empty-state,
@@ -421,11 +523,26 @@ a:hover {
   white-space: nowrap;
 }
 
+.game-datetime-inline {
+  min-width: 184px;
+  font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
 .game-team {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.game-team-link {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: inherit;
 }
 
 .game-score {
@@ -493,13 +610,13 @@ a:hover {
 
 .roster-list {
   display: grid;
-  gap: 6px;
+  gap: 10px;
 }
 
 .roster-row {
   border-bottom: 1px solid var(--line);
   justify-content: space-between;
-  padding: 6px 0;
+  padding: 8px 0;
 }
 
 @media (max-width: 820px) {
@@ -526,6 +643,14 @@ a:hover {
   .game-row-main {
     grid-template-columns: 76px minmax(108px, 1fr) 24px 14px minmax(108px, 1fr) 24px;
     gap: 8px;
+  }
+
+  .game-row-main-inline {
+    grid-template-columns: 168px minmax(78px, 1fr) 24px 14px minmax(78px, 1fr) 24px;
+  }
+
+  .game-row-side-inline {
+    grid-template-columns: minmax(0, 1fr) 72px 28px 28px;
   }
 
   .multi-select-menu {

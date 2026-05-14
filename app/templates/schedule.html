@@ -9,20 +9,22 @@
     </div>
   </div>
 
-  <form method="get" action="/schedule" class="filters" data-live-schedule>
+  <form method="get" action="/schedule" class="filters" data-live-schedule data-today-iso="{{ today_iso }}">
     <div class="filter-field">
-      <span class="filter-label">Division</span>
-      <details class="multi-select" data-multi-select data-default-label="All divisions">
+      <div class="filter-label-row">
+        <span class="filter-label">Division</span>
+        <div class="filter-actions" data-filter-actions="division">
+          <button type="button" class="multi-action" data-action="all">All</button>
+          <button type="button" class="multi-action" data-action="none">None</button>
+        </div>
+      </div>
+      <details class="multi-select multi-select-divisions" data-multi-select data-default-label="All divisions">
         <summary>
           <span class="multi-select-summary">
             {% if selected_divisions %}{{ selected_divisions|length }} selected{% else %}All divisions{% endif %}
           </span>
         </summary>
         <div class="multi-select-menu">
-          <div class="multi-select-actions">
-            <button type="button" class="multi-action" data-action="all">All</button>
-            <button type="button" class="multi-action" data-action="none">None</button>
-          </div>
           {% for division in divisions %}
           <label class="check-option">
             <input type="checkbox" name="division" value="{{ division.id }}" {% if division.id in selected_divisions %}checked{% endif %}>
@@ -34,7 +36,14 @@
     </div>
 
     <div class="filter-field filter-field-wide">
-      <span class="filter-label">Team</span>
+      <div class="filter-label-row">
+        <span class="filter-label">Team</span>
+        <div class="filter-actions" data-filter-actions="team">
+          <button type="button" class="multi-action" data-action="all">All</button>
+          <button type="button" class="multi-action" data-action="none">None</button>
+          <button type="button" class="multi-action" data-action="reset">Reset</button>
+        </div>
+      </div>
       <details class="multi-select multi-select-teams" data-multi-select data-default-label="All teams">
         <summary>
           <span class="multi-select-summary">
@@ -42,11 +51,6 @@
           </span>
         </summary>
         <div class="multi-select-menu">
-          <div class="multi-select-actions">
-            <button type="button" class="multi-action" data-action="all">All</button>
-            <button type="button" class="multi-action" data-action="none">None</button>
-            <button type="button" class="multi-action" data-action="reset">Reset</button>
-          </div>
           <label class="multi-search-wrap">
             <input type="search" class="multi-search" placeholder="Filter teams" data-filter-input>
           </label>
@@ -73,8 +77,17 @@
       <span class="filter-label">View</span>
       <select name="view">
         <option value="upcoming" {% if selected_view == "upcoming" %}selected{% endif %}>Upcoming</option>
+        <option value="last-3" {% if selected_view == "last-3" %}selected{% endif %}>Last 3 Days</option>
         <option value="to-date" {% if selected_view == "to-date" %}selected{% endif %}>Season To Date</option>
         <option value="all" {% if selected_view == "all" %}selected{% endif %}>All season</option>
+      </select>
+    </label>
+
+    <label class="filter-field">
+      <span class="filter-label">Order</span>
+      <select name="order">
+        <option value="oldest" {% if selected_order == "oldest" %}selected{% endif %}>Oldest first</option>
+        <option value="newest" {% if selected_order == "newest" %}selected{% endif %}>Newest first</option>
       </select>
     </label>
   </form>

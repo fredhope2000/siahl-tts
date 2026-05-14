@@ -45,8 +45,21 @@ class StandingRow(BaseModel):
 class RosterPlayer(BaseModel):
     id: int | None = None
     name: str
+    external_player_url: str | None = None
     jersey_number: str | None = None
     position: str | None = None
+    is_goalie: bool = False
+    gp: int | None = None
+    g: int | None = None
+    a: int | None = None
+    pts: int | None = None
+    pim: int | None = None
+    w: int | None = None
+    l: int | None = None
+    otl: int | None = None
+    gaa: float | None = None
+    save_pct: float | None = None
+    so: int | None = None
 
 
 class Game(BaseModel):

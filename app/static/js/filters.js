@@ -22,38 +22,6 @@ function wireMultiSelect(details) {
     checkbox.addEventListener("change", () => updateSummary(details));
   }
 
-  for (const button of details.querySelectorAll("[data-action]")) {
-    button.addEventListener("click", () => {
-      const action = button.dataset.action;
-      if (action === "reset") {
-        if (searchInput) {
-          searchInput.value = "";
-        }
-        for (const checkbox of checkboxes) {
-          checkbox.checked = true;
-        }
-        for (const label of optionLabels) {
-          label.style.display = "";
-        }
-        updateSummary(details);
-        return;
-      }
-
-      const checked = action === "all";
-      const visibleOptions = optionLabels.filter((label) => label.style.display !== "none");
-      const targetCheckboxes =
-        visibleOptions.length > 0
-          ? visibleOptions
-              .map((label) => label.querySelector('input[type="checkbox"]'))
-              .filter(Boolean)
-          : checkboxes;
-      for (const checkbox of targetCheckboxes) {
-        checkbox.checked = checked;
-      }
-      updateSummary(details);
-    });
-  }
-
   if (searchInput) {
     searchInput.addEventListener("input", () => {
       const term = searchInput.value.toLowerCase();
@@ -62,6 +30,12 @@ function wireMultiSelect(details) {
         if (!label.closest("[data-selected-options]")) {
           label.style.display = term !== "" && !text.includes(term) ? "none" : "";
         }
+      }
+    });
+    details.addEventListener("toggle", () => {
+      if (details.open) {
+        searchInput.focus();
+        searchInput.select();
       }
     });
   }
@@ -82,6 +56,14 @@ document.addEventListener("click", (event) => {
       details.open = false;
     }
   }
+  for (const details of document.querySelectorAll("[data-home-team-picker]")) {
+    if (!details.open) {
+      continue;
+    }
+    if (!details.contains(event.target)) {
+      details.open = false;
+    }
+  }
 });
 
 function isoToday() {
@@ -92,7 +74,29 @@ function isoToday() {
   return `${year}-${month}-${day}`;
 }
 
-function updateScheduleUrl(form, selectedDivisions, selectedTeams, view) {
+function isoDaysAgo(daysAgo) {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  now.setDate(now.getDate() - daysAgo);
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseIsoDay(value) {
+  if (!value) {
+    return null;
+  }
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) {
+    return null;
+  }
+  const [, year, month, day] = match;
+  return Date.UTC(Number(year), Number(month) - 1, Number(day));
+}
+
+function updateScheduleUrl(form, selectedDivisions, selectedTeams, view, order) {
   const url = new URL(window.location.href);
   url.searchParams.delete("division");
   url.searchParams.delete("team");
@@ -114,6 +118,7 @@ function updateScheduleUrl(form, selectedDivisions, selectedTeams, view) {
     }
   }
   url.searchParams.set("view", view);
+  url.searchParams.set("order", order);
   window.history.replaceState(null, "", url);
 }
 
@@ -122,6 +127,7 @@ function wireLiveSchedule(form) {
   const groups = [...document.querySelectorAll("[data-game-group]")];
   const emptyState = document.querySelector("[data-empty-state]");
   const viewSelect = form.querySelector('select[name="view"]');
+  const orderSelect = form.querySelector('select[name="order"]');
   const divisionCheckboxes = [
     ...form.querySelectorAll('input[name="division"][type="checkbox"]'),
   ];
@@ -133,6 +139,8 @@ function wireLiveSchedule(form) {
   const teamSelectedSection = form.querySelector(".multi-select-teams [data-selected-section]");
   const teamSelectedOptions = form.querySelector(".multi-select-teams [data-selected-options]");
   const teamAvailableOptions = form.querySelector(".multi-select-teams [data-available-options]");
+  const divisionDetails = form.querySelector(".multi-select-divisions");
+  const teamDetails = form.querySelector(".multi-select-teams");
 
   if (divisionCheckboxes.every((input) => !input.checked)) {
     for (const input of divisionCheckboxes) {
@@ -146,6 +154,13 @@ function wireLiveSchedule(form) {
   }
   for (const details of form.querySelectorAll("[data-multi-select]")) {
     updateSummary(details);
+  }
+  for (const [index, group] of groups.entries()) {
+    group.dataset.originalIndex = String(index);
+    const groupRows = [...group.querySelectorAll("[data-game-row]")];
+    for (const [rowIndex, row] of groupRows.entries()) {
+      row.dataset.originalIndex = String(rowIndex);
+    }
   }
 
   function selectionState(allCheckboxes, selectedValues) {
@@ -204,6 +219,41 @@ function wireLiveSchedule(form) {
     }
   }
 
+  function applyBulkAction(details, action) {
+    if (!details) {
+      return;
+    }
+
+    const checkboxes = [...details.querySelectorAll('input[type="checkbox"]')];
+    const searchInput = details.querySelector("[data-filter-input]");
+    const optionLabels = [...details.querySelectorAll("[data-filter-option]")];
+
+    if (action === "reset") {
+      if (searchInput) {
+        searchInput.value = "";
+      }
+      for (const checkbox of checkboxes) {
+        checkbox.checked = true;
+      }
+      for (const label of optionLabels) {
+        label.style.display = "";
+      }
+      return;
+    }
+
+    const checked = action === "all";
+    const visibleOptions = optionLabels.filter((label) => label.style.display !== "none");
+    const targetCheckboxes =
+      visibleOptions.length > 0
+        ? visibleOptions
+            .map((label) => label.querySelector('input[type="checkbox"]'))
+            .filter(Boolean)
+        : checkboxes;
+    for (const checkbox of targetCheckboxes) {
+      checkbox.checked = checked;
+    }
+  }
+
   function applyScheduleFilters() {
     const selectedDivisions = new Set(
       [...form.querySelectorAll('input[name="division"]:checked')].map((input) => input.value)
@@ -212,7 +262,11 @@ function wireLiveSchedule(form) {
       [...form.querySelectorAll('input[name="team"]:checked')].map((input) => input.value)
     );
     const view = viewSelect ? viewSelect.value : "upcoming";
-    const today = isoToday();
+    const order = orderSelect ? orderSelect.value : "oldest";
+    const today = form.dataset.todayIso || isoToday();
+    const lastThreeStart = isoDaysAgo(2);
+    const todayDay = parseIsoDay(today);
+    const lastThreeStartDay = todayDay === null ? parseIsoDay(lastThreeStart) : todayDay - (2 * 24 * 60 * 60 * 1000);
     let visibleRows = 0;
     const divisionState = selectionState(divisionCheckboxes, selectedDivisions);
     const teamState = selectionState(teamCheckboxes, selectedTeams);
@@ -222,6 +276,7 @@ function wireLiveSchedule(form) {
       const homeTeamId = row.dataset.homeTeamId || "";
       const awayTeamId = row.dataset.awayTeamId || "";
       const gameDate = row.dataset.gameDate || "";
+      const gameDay = parseIsoDay(gameDate);
 
       const divisionMatch = selectedDivisions.has(divisionId);
       const teamMatch =
@@ -229,9 +284,16 @@ function wireLiveSchedule(form) {
 
       let viewMatch = true;
       if (view === "upcoming") {
-        viewMatch = gameDate === "" || gameDate >= today;
+        viewMatch = gameDay === null || (todayDay !== null && gameDay >= todayDay);
+      } else if (view === "last-3") {
+        viewMatch =
+          gameDay !== null &&
+          lastThreeStartDay !== null &&
+          todayDay !== null &&
+          gameDay >= lastThreeStartDay &&
+          gameDay <= todayDay;
       } else if (view === "to-date") {
-        viewMatch = gameDate === "" || gameDate <= today;
+        viewMatch = gameDay === null || (todayDay !== null && gameDay <= todayDay);
       }
 
       let selectionMatch = false;
@@ -263,18 +325,64 @@ function wireLiveSchedule(form) {
     }
 
     for (const group of groups) {
+      const table = group.querySelector(".game-table");
+      const groupRows = [...group.querySelectorAll("[data-game-row]")];
+      const orderedRows = [...groupRows].sort((a, b) => {
+        const aIndex = Number(a.dataset.originalIndex || "0");
+        const bIndex = Number(b.dataset.originalIndex || "0");
+        return order === "newest" ? bIndex - aIndex : aIndex - bIndex;
+      });
+      for (const row of orderedRows) {
+        table?.appendChild(row);
+      }
+
       const anyVisible = [...group.querySelectorAll("[data-game-row]")].some(
         (row) => row.style.display !== "none"
       );
       group.style.display = anyVisible ? "" : "none";
     }
 
+    const orderedGroups = [...groups].sort((a, b) => {
+      const aDate = a.dataset.groupDate || "";
+      const bDate = b.dataset.groupDate || "";
+      const aIndex = Number(a.dataset.originalIndex || "0");
+      const bIndex = Number(b.dataset.originalIndex || "0");
+
+      if (aDate === bDate) {
+        return order === "newest" ? bIndex - aIndex : aIndex - bIndex;
+      }
+      if (!aDate) {
+        return 1;
+      }
+      if (!bDate) {
+        return -1;
+      }
+      return order === "newest"
+        ? bDate.localeCompare(aDate)
+        : aDate.localeCompare(bDate);
+    });
+    for (const group of orderedGroups) {
+      group.parentNode?.appendChild(group);
+    }
+
     if (emptyState) {
       emptyState.hidden = visibleRows !== 0;
     }
 
-    updateScheduleUrl(form, selectedDivisions, selectedTeams, view);
+    updateScheduleUrl(form, selectedDivisions, selectedTeams, view, order);
   }
+
+  form.addEventListener("change", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) {
+      return;
+    }
+    syncTeamOptions();
+    for (const details of form.querySelectorAll("[data-multi-select]")) {
+      updateSummary(details);
+    }
+    applyScheduleFilters();
+  });
 
   for (const input of form.querySelectorAll('input[type="checkbox"]')) {
     input.addEventListener("change", () => {
@@ -288,6 +396,9 @@ function wireLiveSchedule(form) {
   if (viewSelect) {
     viewSelect.addEventListener("change", applyScheduleFilters);
   }
+  if (orderSelect) {
+    orderSelect.addEventListener("change", applyScheduleFilters);
+  }
   if (teamSearchInput) {
     teamSearchInput.addEventListener("input", () => {
       syncTeamOptions();
@@ -297,8 +408,13 @@ function wireLiveSchedule(form) {
       applyScheduleFilters();
     });
   }
-  for (const button of form.querySelectorAll("[data-action]")) {
+  for (const button of form.querySelectorAll("[data-filter-actions] [data-action]")) {
     button.addEventListener("click", () => {
+      const target = button.closest("[data-filter-actions]")?.dataset.filterActions;
+      applyBulkAction(
+        target === "division" ? divisionDetails : target === "team" ? teamDetails : null,
+        button.dataset.action
+      );
       syncTeamOptions();
       for (const details of form.querySelectorAll("[data-multi-select]")) {
         updateSummary(details);
@@ -312,4 +428,70 @@ function wireLiveSchedule(form) {
 
 for (const form of document.querySelectorAll("[data-live-schedule]")) {
   wireLiveSchedule(form);
+}
+
+function wireRosterToggle(toggle) {
+  const panel = toggle.closest(".panel");
+  if (!panel) {
+    return;
+  }
+  const blocks = [...panel.querySelectorAll("[data-roster-block]")];
+
+  function applyRosterFilter() {
+    const onlyActive = toggle.checked;
+    for (const block of blocks) {
+      const rows = [...block.querySelectorAll("[data-roster-row]")];
+      let visibleRows = 0;
+      for (const row of rows) {
+        const gp = Number(row.dataset.gp || "0");
+        const visible = !onlyActive || gp > 0;
+        row.style.display = visible ? "" : "none";
+        if (visible) {
+          visibleRows += 1;
+        }
+      }
+      block.style.display = visibleRows > 0 ? "" : "none";
+    }
+  }
+
+  toggle.addEventListener("change", applyRosterFilter);
+  applyRosterFilter();
+}
+
+for (const toggle of document.querySelectorAll("[data-roster-toggle]")) {
+  wireRosterToggle(toggle);
+}
+
+function wireHomeTeamPicker(details) {
+  const input = details.querySelector("[data-home-team-input]");
+  const options = [...details.querySelectorAll("[data-home-team-option]")];
+  if (!input) {
+    return;
+  }
+
+  function applyFilter() {
+    const term = input.value.toLowerCase();
+    for (const option of options) {
+      const visible = term === "" || option.textContent.toLowerCase().includes(term);
+      option.style.display = visible ? "" : "none";
+    }
+  }
+
+  input.addEventListener("input", applyFilter);
+  details.addEventListener("toggle", () => {
+    if (details.open) {
+      input.focus();
+      input.select();
+    }
+  });
+  for (const option of options) {
+    option.addEventListener("click", () => {
+      details.open = false;
+    });
+  }
+  applyFilter();
+}
+
+for (const details of document.querySelectorAll("[data-home-team-picker]")) {
+  wireHomeTeamPicker(details);
 }

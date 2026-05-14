@@ -5,9 +5,9 @@
   <p class="eyebrow">{{ current_season.label }}</p>
 </section>
 
-<section class="panel-grid">
+<section class="home-stack">
   <article class="panel">
-    <h2>Divisions</h2>
+    <h2 class="home-panel-heading">Divisions</h2>
     <div class="chip-list">
       {% for division in divisions %}
       <a class="chip" href="/standings?division={{ division.id }}">{{ division.name }}</a>
@@ -16,18 +16,28 @@
   </article>
 
   <article class="panel">
-    <h2>Teams</h2>
-    <div class="link-list">
-      {% for team in teams %}
-      <a href="/teams/{{ team.id }}">{{ team.name }}</a>
-      {% endfor %}
-    </div>
+    <h2 class="home-panel-heading">Teams</h2>
+    <details class="multi-select home-team-picker" data-home-team-picker>
+      <summary>
+        <span class="multi-select-summary">Select a team</span>
+      </summary>
+      <div class="multi-select-menu">
+        <label class="multi-search-wrap">
+          <input type="search" class="multi-search" placeholder="Search for a team" data-home-team-input>
+        </label>
+        <div class="link-list home-team-results">
+          {% for team in teams %}
+          <a href="/teams/{{ team.id }}" data-home-team-option>{{ team.name }}</a>
+          {% endfor %}
+        </div>
+      </div>
+    </details>
   </article>
 </section>
 
 <section class="panel">
   <div class="section-head">
-    <h2>Upcoming Games</h2>
+    <h2>Recent Games</h2>
     <a href="/schedule">Full schedule</a>
   </div>
   {% include "partials/game_list.html" %}

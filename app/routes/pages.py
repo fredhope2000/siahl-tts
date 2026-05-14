@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse
@@ -34,16 +36,25 @@ def _base_context(request: Request) -> dict:
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     service = request.app.state.tts_service
+    today = datetime.now(ZoneInfo("America/Los_Angeles")).date()
+    start_date = today - timedelta(days=2)
     meta, schedule = await asyncio.gather(
         service.get_meta(),
-        service.get_schedule(view="upcoming"),
+        service.get_schedule(view="all"),
     )
+    teams = sorted(meta.teams, key=lambda team_item: team_item.name.lower())
+    recent_games = [
+        game
+        for game in schedule.games
+        if game.date_label
+        and start_date.isoformat() <= game.date_label <= today.isoformat()
+    ]
     context = _base_context(request) | {
         "page_title": "Home",
         "current_season": meta.current_season,
         "divisions": meta.divisions,
-        "teams": meta.teams,
-        "games_grouped": service.group_games_by_date(schedule.games),
+        "teams": teams,
+        "games_grouped": service.group_games_by_date(recent_games),
     }
     return templates.TemplateResponse(request, "home.html", context)
 
@@ -78,9 +89,11 @@ async def schedule(
     request: Request,
     division: list[str] | None = Query(default=None),
     team: list[str] | None = Query(default=None),
-    view: str = Query(default="upcoming", pattern="^(upcoming|to-date|all)$"),
+    view: str = Query(default="upcoming", pattern="^(upcoming|last-3|to-date|all)$"),
+    order: str = Query(default="oldest", pattern="^(oldest|newest)$"),
 ):
     service = request.app.state.tts_service
+    today_iso = datetime.now(ZoneInfo("America/Los_Angeles")).date().isoformat()
     meta, schedule_payload = await asyncio.gather(
         service.get_meta(),
         service.get_schedule(view="all"),
@@ -97,6 +110,8 @@ async def schedule(
         "selected_divisions": selected_divisions,
         "selected_teams": selected_teams,
         "selected_view": view,
+        "selected_order": order,
+        "today_iso": today_iso,
         "games_grouped": service.group_games_by_date(schedule_payload.games),
     }
     return templates.TemplateResponse(request, "schedule.html", context)
