@@ -1,24 +1,48 @@
 {% if standings %}
 <div class="table-wrap">
-  <table class="data-table standings-table-compact">
+  <table class="data-table standings-table">
     <colgroup>
       <col class="col-team">
-      <col class="col-record">
-      <col class="col-points">
+      <col class="col-stat col-desktop">
+      <col class="col-gp-mobile col-mobile">
+      <col class="col-stat col-desktop">
+      <col class="col-stat col-desktop">
+      <col class="col-stat col-desktop">
+      <col class="col-stat-wide col-desktop">
+      <col class="col-record col-mobile">
+      <col class="col-stat-wide">
+      <col class="col-streak col-desktop">
+      <col class="col-tiebreak col-desktop">
     </colgroup>
     <thead>
       <tr>
         <th>Team</th>
-        <th>Record</th>
+        <th class="col-desktop">GP</th>
+        <th class="col-mobile">GP</th>
+        <th class="col-desktop">W</th>
+        <th class="col-desktop">L</th>
+        <th class="col-desktop">T</th>
+        <th class="col-desktop">OTL</th>
+        <th class="col-mobile">Record</th>
         <th>PTS</th>
+        <th class="col-desktop">STRK</th>
+        <th class="col-desktop">TB</th>
       </tr>
     </thead>
     <tbody>
       {% for row in standings %}
       <tr>
         <td><a href="/teams/{{ row.team_id }}">{{ row.team_name }}</a></td>
-        <td>{{ row.w or 0 }}-{{ row.l or 0 }}-{{ row.t or 0 }}-{{ row.otl or 0 }}</td>
-        <td>{{ row.pts or "-" }}</td>
+        <td class="col-desktop">{{ row.gp or 0 }}</td>
+        <td class="col-mobile">{{ row.gp or 0 }}</td>
+        <td class="col-desktop">{{ row.w or 0 }}</td>
+        <td class="col-desktop">{{ row.l or 0 }}</td>
+        <td class="col-desktop">{{ row.t or 0 }}</td>
+        <td class="col-desktop">{{ row.otl or 0 }}</td>
+        <td class="col-mobile">{{ row.w or 0 }}-{{ row.l or 0 }}-{{ row.t or 0 }}-{{ row.otl or 0 }}</td>
+        <td>{{ row.pts or 0 }}</td>
+        <td class="col-desktop">{{ row.streak or 0 }}</td>
+        <td class="col-desktop">{{ row.tiebreaker or 0 }}</td>
       </tr>
       {% endfor %}
     </tbody>

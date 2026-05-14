@@ -381,8 +381,16 @@ a:hover {
   width: 7.4rem;
 }
 
+.data-table .col-gp-mobile {
+  width: 3.2rem;
+}
+
 .data-table .col-points {
   width: 4rem;
+}
+
+.col-mobile {
+  display: none;
 }
 
 .data-table .col-roster-number {
@@ -417,10 +425,18 @@ a:hover {
   white-space: nowrap;
 }
 
-.standings-table-compact td:nth-child(2),
-.standings-table-compact th:nth-child(2),
-.standings-table-compact td:nth-child(3),
-.standings-table-compact th:nth-child(3) {
+.standings-table td:nth-child(2),
+.standings-table th:nth-child(2),
+.standings-table td:nth-child(3),
+.standings-table th:nth-child(3),
+.standings-table td:nth-child(4),
+.standings-table th:nth-child(4),
+.standings-table td:nth-child(5),
+.standings-table th:nth-child(5),
+.standings-table td:nth-child(6),
+.standings-table th:nth-child(6),
+.standings-table td:nth-child(7),
+.standings-table th:nth-child(7) {
   text-align: center;
 }
 
@@ -787,20 +803,38 @@ a:hover {
     width: 100%;
   }
 
-  .standings-table-compact {
+  .col-desktop {
+    display: none;
+  }
+
+  .col-mobile {
+    display: table-cell;
+  }
+
+  .standings-table {
     font-size: 0.92rem;
   }
 
-  .standings-table-compact th,
-  .standings-table-compact td {
+  .standings-table th,
+  .standings-table td {
     padding: 8px 6px;
   }
 
-  .standings-table-compact .col-record {
-    width: 6.6rem;
+  .standings-table .col-record {
+    width: 5.8rem;
   }
 
-  .standings-table-compact .col-points {
-    width: 3.4rem;
+  .standings-table .col-gp-mobile {
+    width: 3rem;
+  }
+
+  .standings-table .col-points,
+  .standings-table .col-stat-wide {
+    width: 3.2rem;
+  }
+
+  .standings-table td:nth-child(3),
+  .standings-table th:nth-child(3) {
+    text-align: center;
   }
 }
