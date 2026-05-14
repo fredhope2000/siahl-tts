@@ -440,23 +440,15 @@ a:hover {
   display: none;
 }
 
+.roster-table-mobile {
+  display: none;
+}
+
 .roster-table td:first-child,
 .roster-table th:first-child,
 .roster-table td:nth-child(n + 3),
 .roster-table th:nth-child(n + 3) {
   text-align: center;
-}
-
-.roster-mobile-hide {
-  display: table-cell;
-}
-
-.goalie-mobile-only {
-  display: none;
-}
-
-.goalie-mobile-hide {
-  display: table-cell;
 }
 
 .goalie-table .col-stat {
@@ -721,11 +713,12 @@ a:hover {
   }
 
   .game-row-main-inline {
-    grid-template-columns: 148px minmax(0, 1fr) 24px;
+    grid-template-columns: minmax(0, 1fr) 24px;
     grid-template-areas:
-      "time meta ."
-      "time away-team away-score"
-      "time home-team home-score";
+      "time ."
+      "meta ."
+      "away-team away-score"
+      "home-team home-score";
   }
 
   .game-row-side-inline {
@@ -738,8 +731,8 @@ a:hover {
   }
 
   .game-datetime-inline {
-    min-width: 148px;
     font-size: 0.92rem;
+    min-width: 0;
   }
 
   .game-datetime-mobile-anchor {
@@ -808,6 +801,14 @@ a:hover {
     display: none;
   }
 
+  .game-row-inline .game-datetime-mobile-anchor {
+    align-self: auto;
+  }
+
+  .game-row-inline .game-mobile-meta {
+    white-space: nowrap;
+  }
+
   .game-link-cell {
     text-align: right;
   }
@@ -864,33 +865,48 @@ a:hover {
     padding: 8px 6px;
   }
 
-  .roster-table th,
-  .roster-table td {
+  .refresh-meta {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .roster-table-desktop {
+    display: none;
+  }
+
+  .roster-table-mobile {
+    display: table;
+  }
+
+  .roster-table-mobile th,
+  .roster-table-mobile td {
     padding: 8px 5px;
   }
 
-  .roster-table .col-roster-number {
+  .roster-table-mobile .col-roster-number {
     width: 2.5rem;
   }
 
-  .roster-table .col-stat,
-  .roster-table .col-stat-wide {
+  .roster-table-mobile .col-gp-mobile {
+    width: 2.4rem;
+  }
+
+  .roster-table-mobile .col-stat,
+  .roster-table-mobile .col-stat-wide,
+  .roster-table-mobile .col-points {
     width: 2.9rem;
   }
 
-  .roster-mobile-hide {
-    display: none;
-  }
-
-  .goalie-mobile-hide {
-    display: none;
-  }
-
-  .goalie-mobile-only {
-    display: table-cell;
-  }
-
-  .goalie-table .col-record {
+  .roster-table-mobile .col-record {
     width: 5.6rem;
+  }
+
+  .roster-table-mobile td:nth-child(3),
+  .roster-table-mobile th:nth-child(3),
+  .roster-table-mobile td:nth-child(4),
+  .roster-table-mobile th:nth-child(4),
+  .roster-table-mobile td:nth-child(5),
+  .roster-table-mobile th:nth-child(5) {
+    text-align: center;
   }
 }
