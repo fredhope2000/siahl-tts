@@ -6,6 +6,7 @@
         {% for game in games %}
         {% set away_wins = game.away_score is not none and game.home_score is not none and game.away_score > game.home_score %}
         {% set home_wins = game.away_score is not none and game.home_score is not none and game.home_score > game.away_score %}
+        {% set short_venue = game.venue|replace('San Jose ', '') if game.venue else '' %}
         <article
           class="game-row game-row-inline"
           data-game-row
@@ -17,6 +18,9 @@
         >
           <div class="game-row-main game-row-main-inline">
             <span class="game-datetime-inline game-datetime-mobile-anchor">{{ date_label }} {{ game.time_label or "TBD" }}</span>
+            <span class="game-mobile-meta" title="{{ game.venue or '' }}">
+              {% if short_venue %}<span>{{ short_venue }}</span>{% endif %}
+            </span>
             <span class="game-team game-team-away {% if away_wins %}game-winner{% endif %}">
               {% if game.away_team_id %}
               <a class="game-team-link" href="/teams/{{ game.away_team_id }}">{{ game.away_team_name }}</a>

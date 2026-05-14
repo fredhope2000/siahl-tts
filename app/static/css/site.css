@@ -447,6 +447,18 @@ a:hover {
   text-align: center;
 }
 
+.roster-mobile-hide {
+  display: table-cell;
+}
+
+.goalie-mobile-only {
+  display: none;
+}
+
+.goalie-mobile-hide {
+  display: table-cell;
+}
+
 .goalie-table .col-stat {
   width: 3.3rem;
 }
@@ -711,6 +723,7 @@ a:hover {
   .game-row-main-inline {
     grid-template-columns: 148px minmax(0, 1fr) 24px;
     grid-template-areas:
+      "time meta ."
       "time away-team away-score"
       "time home-team home-score";
   }
@@ -791,6 +804,10 @@ a:hover {
     display: none;
   }
 
+  .game-row-inline .game-venue {
+    display: none;
+  }
+
   .game-link-cell {
     text-align: right;
   }
@@ -845,5 +862,35 @@ a:hover {
   .standings-table-desktop th,
   .standings-table-desktop td {
     padding: 8px 6px;
+  }
+
+  .roster-table th,
+  .roster-table td {
+    padding: 8px 5px;
+  }
+
+  .roster-table .col-roster-number {
+    width: 2.5rem;
+  }
+
+  .roster-table .col-stat,
+  .roster-table .col-stat-wide {
+    width: 2.9rem;
+  }
+
+  .roster-mobile-hide {
+    display: none;
+  }
+
+  .goalie-mobile-hide {
+    display: none;
+  }
+
+  .goalie-mobile-only {
+    display: table-cell;
+  }
+
+  .goalie-table .col-record {
+    width: 5.6rem;
   }
 }
