@@ -495,3 +495,86 @@ function wireHomeTeamPicker(details) {
 for (const details of document.querySelectorAll("[data-home-team-picker]")) {
   wireHomeTeamPicker(details);
 }
+
+function updateTeamScheduleUrl(form, view, order) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("view", view);
+  url.searchParams.set("order", order);
+  window.history.replaceState(null, "", url);
+}
+
+function wireTeamSchedule(form) {
+  const rows = [...document.querySelectorAll("[data-game-row]")];
+  const table = document.querySelector(".game-table-inline");
+  const emptyState = document.querySelector("[data-team-empty-state]");
+  const viewSelect = form.querySelector('select[name="view"]');
+  const orderSelect = form.querySelector('select[name="order"]');
+
+  if (!table || !viewSelect || !orderSelect) {
+    return;
+  }
+
+  for (const [index, row] of rows.entries()) {
+    row.dataset.originalIndex = String(index);
+  }
+
+  function applyTeamScheduleFilters() {
+    const view = viewSelect.value;
+    const order = orderSelect.value;
+    const today = form.dataset.todayIso || isoToday();
+    const todayDay = parseIsoDay(today);
+    const lastThreeStartDay = todayDay === null ? null : todayDay - (2 * 24 * 60 * 60 * 1000);
+    let visibleRows = 0;
+
+    for (const row of rows) {
+      const gameDate = row.dataset.gameDate || "";
+      const gameDay = parseIsoDay(gameDate);
+      let viewMatch = true;
+      if (view === "upcoming") {
+        viewMatch = gameDay === null || (todayDay !== null && gameDay >= todayDay);
+      } else if (view === "last-3") {
+        viewMatch =
+          gameDay !== null &&
+          lastThreeStartDay !== null &&
+          todayDay !== null &&
+          gameDay >= lastThreeStartDay &&
+          gameDay <= todayDay;
+      } else if (view === "to-date") {
+        viewMatch = gameDay === null || (todayDay !== null && gameDay <= todayDay);
+      }
+      row.style.display = viewMatch ? "" : "none";
+      if (viewMatch) {
+        visibleRows += 1;
+      }
+    }
+
+    const orderedRows = [...rows].sort((a, b) => {
+      const aDate = a.dataset.gameDate || "";
+      const bDate = b.dataset.gameDate || "";
+      const aStarts = a.dataset.gameStartsAt || "";
+      const bStarts = b.dataset.gameStartsAt || "";
+      const aIndex = Number(a.dataset.originalIndex || "0");
+      const bIndex = Number(b.dataset.originalIndex || "0");
+
+      const aKey = `${aDate}|${aStarts}|${aIndex}`;
+      const bKey = `${bDate}|${bStarts}|${bIndex}`;
+      return order === "newest" ? bKey.localeCompare(aKey) : aKey.localeCompare(bKey);
+    });
+    for (const row of orderedRows) {
+      table.appendChild(row);
+    }
+
+    if (emptyState) {
+      emptyState.hidden = visibleRows !== 0;
+    }
+    updateTeamScheduleUrl(form, view, order);
+  }
+
+  viewSelect.addEventListener("change", applyTeamScheduleFilters);
+  orderSelect.addEventListener("change", applyTeamScheduleFilters);
+  applyTeamScheduleFilters();
+}
+
+for (const form of document.querySelectorAll("[data-live-team-schedule]")) {
+  wireTeamSchedule(form);
+}

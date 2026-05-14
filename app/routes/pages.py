@@ -159,17 +159,23 @@ async def schedule(
 async def team_page(
     request: Request,
     team_id: int,
+    view: str = Query(default="all", pattern="^(upcoming|last-3|to-date|all)$"),
+    order: str = Query(default="oldest", pattern="^(oldest|newest)$"),
     refresh: int | None = Query(default=None),
 ):
     service = request.app.state.tts_service
     if refresh:
         await service.refresh_team_page(team_id)
         return _redirect_without_refresh(request)
+    today_iso = datetime.now(ZoneInfo("America/Los_Angeles")).date().isoformat()
     team_data = await service.get_team_page(team_id)
     context = _base_context(request) | {
         "page_title": team_data.team.name,
         "team": team_data.team,
         "roster": team_data.roster,
+        "selected_view": view,
+        "selected_order": order,
+        "today_iso": today_iso,
         "games_grouped": service.group_games_by_date(team_data.games),
         "last_refreshed_at": _format_refresh_timestamp(
             service.last_refreshed_at(f"team:{team_id}")

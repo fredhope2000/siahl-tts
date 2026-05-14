@@ -15,9 +15,33 @@
 </section>
 
 <section class="panel">
-  <h2>Schedule</h2>
+  <div class="section-head">
+    <h2>Schedule</h2>
+    <div class="refresh-meta">
+      <a href="/teams/{{ team.id }}?view={{ selected_view }}&order={{ selected_order }}&refresh=1">Refresh now</a>
+    </div>
+  </div>
+  <form method="get" action="/teams/{{ team.id }}" class="filters filters-compact" data-live-team-schedule data-today-iso="{{ today_iso }}">
+    <label class="filter-field">
+      <span class="filter-label">View</span>
+      <select name="view">
+        <option value="upcoming" {% if selected_view == "upcoming" %}selected{% endif %}>Upcoming</option>
+        <option value="last-3" {% if selected_view == "last-3" %}selected{% endif %}>Last 3 Days</option>
+        <option value="to-date" {% if selected_view == "to-date" %}selected{% endif %}>Season To Date</option>
+        <option value="all" {% if selected_view == "all" %}selected{% endif %}>All season</option>
+      </select>
+    </label>
+    <label class="filter-field">
+      <span class="filter-label">Order</span>
+      <select name="order">
+        <option value="oldest" {% if selected_order == "oldest" %}selected{% endif %}>Earliest first</option>
+        <option value="newest" {% if selected_order == "newest" %}selected{% endif %}>Latest first</option>
+      </select>
+    </label>
+  </form>
   {% set inline_date_mode = true %}
   {% include "partials/game_list.html" %}
+  <p class="empty-state" data-team-empty-state hidden>No games found for the selected filters.</p>
 </section>
 
 <section class="panel">

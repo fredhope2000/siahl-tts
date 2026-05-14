@@ -451,6 +451,19 @@ a:hover {
   text-align: center;
 }
 
+.roster-table td:nth-child(2),
+.roster-table th:nth-child(2) {
+  min-width: 0;
+}
+
+.roster-table td:nth-child(2) a,
+.roster-table td:nth-child(2) strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .goalie-table .col-stat {
   width: 3.3rem;
 }
@@ -880,25 +893,25 @@ a:hover {
 
   .roster-table-mobile th,
   .roster-table-mobile td {
-    padding: 8px 5px;
+    padding: 7px 4px;
   }
 
   .roster-table-mobile .col-roster-number {
-    width: 2.5rem;
+    width: 2.1rem;
   }
 
   .roster-table-mobile .col-gp-mobile {
-    width: 2.4rem;
+    width: 2.2rem;
   }
 
   .roster-table-mobile .col-stat,
   .roster-table-mobile .col-stat-wide,
   .roster-table-mobile .col-points {
-    width: 2.9rem;
+    width: 2.5rem;
   }
 
   .roster-table-mobile .col-record {
-    width: 5.6rem;
+    width: 4.9rem;
   }
 
   .roster-table-mobile td:nth-child(3),
