@@ -78,6 +78,8 @@ class Game(BaseModel):
     away_team_name: str
     home_score: int | None = None
     away_score: int | None = None
+    home_locker_room: str | None = None
+    away_locker_room: str | None = None
     external_game_url: str | None = None
     external_scorecard_url: str | None = None
 

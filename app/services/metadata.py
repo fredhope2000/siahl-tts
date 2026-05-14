@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from collections import defaultdict
 from datetime import date, datetime, timedelta
+from html.parser import HTMLParser
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -22,6 +23,40 @@ from app.models.domain import (
 )
 from app.services.cache import TTLCache
 from app.services.tts_client import TimeToScoreClient
+
+
+class _LockerRoomTableParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self._in_row = False
+        self._in_cell = False
+        self._cell_parts: list[str] = []
+        self._current_row: list[str] = []
+        self.rows: list[list[str]] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "tr":
+            self._in_row = True
+            self._current_row = []
+        elif self._in_row and tag in {"td", "th"}:
+            self._in_cell = True
+            self._cell_parts = []
+
+    def handle_endtag(self, tag: str) -> None:
+        if self._in_row and tag in {"td", "th"} and self._in_cell:
+            cell = "".join(self._cell_parts).strip()
+            self._current_row.append(cell)
+            self._cell_parts = []
+            self._in_cell = False
+        elif tag == "tr" and self._in_row:
+            if self._current_row:
+                self.rows.append(self._current_row)
+            self._current_row = []
+            self._in_row = False
+
+    def handle_data(self, data: str) -> None:
+        if self._in_cell:
+            self._cell_parts.append(data)
 
 
 class TimeToScoreService:
@@ -228,6 +263,35 @@ class TimeToScoreService:
         return await self.cache.get_or_set(
             f"team:{team_id}", self.settings.cache_ttl_team, loader
         )
+
+    async def get_locker_room_assignments(self) -> dict[int, dict[str, str | None]]:
+        async def loader() -> dict[int, dict[str, str | None]]:
+            if self.uses_mock_data:
+                return {}
+            html = await self.client.fetch_public_page("display-lr-assignments.php")
+            return self._parse_locker_room_assignments(html)
+
+        return await self.cache.get_or_set(
+            "locker-rooms", self.settings.cache_ttl_locker_rooms, loader
+        )
+
+    async def apply_locker_rooms(self, games: list[Game]) -> list[Game]:
+        assignments = await self.get_locker_room_assignments()
+        merged: list[Game] = []
+        for game in games:
+            assignment = assignments.get(game.id) or self._temporary_locker_room_override(game)
+            if not assignment:
+                merged.append(game)
+                continue
+            merged.append(
+                game.model_copy(
+                    update={
+                        "home_locker_room": assignment.get("home_locker_room"),
+                        "away_locker_room": assignment.get("away_locker_room"),
+                    }
+                )
+            )
+        return merged
 
     async def refresh_team_page(self, team_id: int) -> TeamPageData:
         cache_key = f"team:{team_id}"
@@ -539,6 +603,37 @@ class TimeToScoreService:
             external_game_url=f"{site_base}/test/game.php?game={game_id}",
             external_scorecard_url=external_scorecard_url,
         )
+
+    def _temporary_locker_room_override(
+        self, game: Game
+    ) -> dict[str, str | None] | None:
+        if (
+            game.date_label == self._pacific_today().isoformat()
+            and game.home_team_name == "Rebel Scum 4"
+            and game.away_team_name == "Rebels"
+        ):
+            return {
+                "home_locker_room": "G5",
+                "away_locker_room": "G7",
+            }
+        return None
+
+    def _parse_locker_room_assignments(self, html: str) -> dict[int, dict[str, str | None]]:
+        parser = _LockerRoomTableParser()
+        parser.feed(html)
+        assignments: dict[int, dict[str, str | None]] = {}
+        for row in parser.rows:
+            if not row or row[0] == "Game" or len(row) < 9:
+                continue
+            try:
+                game_id = int(row[0])
+            except ValueError:
+                continue
+            assignments[game_id] = {
+                "home_locker_room": row[6] or None,
+                "away_locker_room": row[8] or None,
+            }
+        return assignments
 
     def _normalize_status(self, item: dict[str, Any]) -> str | None:
         raw = self._str_from(item, ["game_status", "status"], "").strip().lower()

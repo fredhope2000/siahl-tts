@@ -1,4 +1,5 @@
 {% set inline_date_mode = inline_date_mode|default(false) %}
+{% set show_lockers = show_lockers|default(false) %}
 {% if games_grouped %}
   {% if inline_date_mode %}
     <div class="game-table game-table-inline">
@@ -27,6 +28,7 @@
               {% else %}
               {{ game.away_team_name }}
               {% endif %}
+              {% if show_lockers and game.away_locker_room %}<span class="game-locker-room">{{ game.away_locker_room }}</span>{% endif %}
             </span>
             <span class="game-score game-score-away {% if away_wins %}game-winner{% endif %}">{% if game.away_score is not none %}{{ game.away_score }}{% endif %}</span>
             <span class="game-sep game-sep-mobile">@</span>
@@ -36,6 +38,7 @@
               {% else %}
               {{ game.home_team_name }}
               {% endif %}
+              {% if show_lockers and game.home_locker_room %}<span class="game-locker-room">{{ game.home_locker_room }}</span>{% endif %}
             </span>
             <span class="game-score game-score-home {% if home_wins %}game-winner{% endif %}">{% if game.home_score is not none %}{{ game.home_score }}{% endif %}</span>
           </div>
@@ -91,6 +94,7 @@
             {% else %}
             {{ game.away_team_name }}
             {% endif %}
+            {% if show_lockers and game.away_locker_room %}<span class="game-locker-room">{{ game.away_locker_room }}</span>{% endif %}
           </span>
           <span class="game-score game-score-away {% if away_wins %}game-winner{% endif %}">{% if game.away_score is not none %}{{ game.away_score }}{% endif %}</span>
           <span class="game-sep game-sep-mobile">@</span>
@@ -100,6 +104,7 @@
             {% else %}
             {{ game.home_team_name }}
             {% endif %}
+            {% if show_lockers and game.home_locker_room %}<span class="game-locker-room">{{ game.home_locker_room }}</span>{% endif %}
           </span>
           <span class="game-score game-score-home {% if home_wins %}game-winner{% endif %}">{% if game.home_score is not none %}{{ game.home_score }}{% endif %}</span>
         </div>

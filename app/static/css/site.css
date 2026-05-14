@@ -619,12 +619,34 @@ a:hover {
   white-space: nowrap;
 }
 
+.game-team {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .game-team-link {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: inherit;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.game-locker-room {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+  font-size: 0.74rem;
+  font-weight: 400;
+  vertical-align: middle;
 }
 
 .game-score {

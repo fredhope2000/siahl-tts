@@ -30,6 +30,7 @@ class Settings:
     cache_ttl_schedule: int = int(os.getenv("CACHE_TTL_SCHEDULE", "600"))
     cache_ttl_standings: int = int(os.getenv("CACHE_TTL_STANDINGS", "600"))
     cache_ttl_team: int = int(os.getenv("CACHE_TTL_TEAM", "3600"))
+    cache_ttl_locker_rooms: int = int(os.getenv("CACHE_TTL_LOCKER_ROOMS", "600"))
     prewarm_on_startup: bool = _get_bool("PREWARM_ON_STARTUP", True)
     refresh_meta_interval_seconds: int = int(
         os.getenv("REFRESH_META_INTERVAL_SECONDS", "21600")

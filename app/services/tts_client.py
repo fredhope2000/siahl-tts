@@ -30,3 +30,11 @@ class TimeToScoreClient:
             response = await client.get(url, follow_redirects=True)
             response.raise_for_status()
             return response.json()
+
+    async def fetch_public_page(self, path: str) -> str:
+        base = self.settings.tts_site_base.rstrip("/")
+        url = f"{base}/{path.lstrip('/')}"
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.get(url, follow_redirects=True)
+            response.raise_for_status()
+            return response.text

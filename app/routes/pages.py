@@ -69,6 +69,7 @@ async def home(request: Request):
         if game.date_label
         and start_date.isoformat() <= game.date_label <= today.isoformat()
     ]
+    recent_games = await service.apply_locker_rooms(recent_games)
     recent_games_grouped = [
         (date_label, list(reversed(grouped_games)))
         for date_label, grouped_games in reversed(service.group_games_by_date(recent_games))
