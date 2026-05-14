@@ -1007,6 +1007,10 @@ a:hover {
     padding: 7px 2px;
   }
 
+  .goalie-table.roster-table-mobile {
+    font-size: 0.84rem;
+  }
+
   .roster-table-mobile .col-roster-name {
     width: auto;
   }
