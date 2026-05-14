@@ -69,12 +69,16 @@ async def home(request: Request):
         if game.date_label
         and start_date.isoformat() <= game.date_label <= today.isoformat()
     ]
+    recent_games_grouped = [
+        (date_label, list(reversed(grouped_games)))
+        for date_label, grouped_games in reversed(service.group_games_by_date(recent_games))
+    ]
     context = _base_context(request) | {
         "page_title": "Home",
         "current_season": meta.current_season,
         "divisions": meta.divisions,
         "teams": teams,
-        "games_grouped": service.group_games_by_date(recent_games),
+        "games_grouped": recent_games_grouped,
     }
     return templates.TemplateResponse(request, "home.html", context)
 
