@@ -389,10 +389,6 @@ a:hover {
   width: 4rem;
 }
 
-.col-mobile {
-  display: none;
-}
-
 .data-table .col-roster-number {
   width: 3.2rem;
 }
@@ -438,6 +434,10 @@ a:hover {
 .standings-table td:nth-child(7),
 .standings-table th:nth-child(7) {
   text-align: center;
+}
+
+.standings-table-mobile {
+  display: none;
 }
 
 .roster-table td:first-child,
@@ -803,38 +803,47 @@ a:hover {
     width: 100%;
   }
 
-  .col-desktop {
+  .standings-table-desktop {
     display: none;
   }
 
-  .col-mobile {
-    display: table-cell;
-  }
-
-  .standings-table {
+  .standings-table-mobile {
+    display: table;
     font-size: 0.92rem;
   }
 
-  .standings-table th,
-  .standings-table td {
+  .standings-table-mobile th,
+  .standings-table-mobile td {
     padding: 8px 6px;
   }
 
-  .standings-table .col-record {
+  .standings-table-mobile .col-record {
     width: 5.4rem;
   }
 
-  .standings-table .col-gp-mobile {
+  .standings-table-mobile .col-gp-mobile {
     width: 2.4rem;
   }
 
-  .standings-table .col-points,
-  .standings-table .col-stat-wide {
+  .standings-table-mobile .col-points {
     width: 2.5rem;
   }
 
-  .standings-table td:nth-child(3),
-  .standings-table th:nth-child(3) {
+  .standings-table-mobile td:nth-child(2),
+  .standings-table-mobile th:nth-child(2),
+  .standings-table-mobile td:nth-child(3),
+  .standings-table-mobile th:nth-child(3),
+  .standings-table-mobile td:nth-child(4),
+  .standings-table-mobile th:nth-child(4) {
     text-align: center;
+  }
+
+  .standings-table-desktop {
+    font-size: 0.92rem;
+  }
+
+  .standings-table-desktop th,
+  .standings-table-desktop td {
+    padding: 8px 6px;
   }
 }
