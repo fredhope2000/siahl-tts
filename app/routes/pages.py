@@ -177,6 +177,23 @@ async def team_page(
         service.get_meta(),
         service.get_team_page(team_id),
     )
+    meta_team = next((item for item in meta.teams if item.id == team_id), None)
+    team = (
+        team_data.team.model_copy(
+            update={
+                "division_id": meta_team.division_id,
+                "division_name": meta_team.division_name,
+                "gp": meta_team.gp,
+                "w": meta_team.w,
+                "l": meta_team.l,
+                "t": meta_team.t,
+                "otl": meta_team.otl,
+                "pts": meta_team.pts,
+            }
+        )
+        if meta_team
+        else team_data.team
+    )
     games_with_lockers = await service.apply_locker_rooms(team_data.games)
     gameday_games = [
         game.model_copy(update={"date_label": "TODAY"})
@@ -184,9 +201,9 @@ async def team_page(
         if game.date_label == today_iso
     ]
     context = _base_context(request) | {
-        "page_title": team_data.team.name,
+        "page_title": team.name,
         "current_season": meta.current_season,
-        "team": team_data.team,
+        "team": team,
         "roster": team_data.roster,
         "selected_view": view,
         "selected_order": order,

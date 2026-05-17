@@ -423,6 +423,14 @@ class TimeToScoreService:
                             season_id=self.settings.current_season_id,
                             division_id=level_id,
                             division_name=division_name_map.get(level_id, level_name),
+                            gp=self._int_from(team_item, ["games_played", "gp"]),
+                            w=self._int_from(team_item, ["wins", "w"]),
+                            l=self._int_from(team_item, ["losses", "l"]),
+                            t=self._int_from(team_item, ["ties", "t"]),
+                            otl=self._int_from(
+                                team_item, ["otlosses", "ot_losses", "otl"]
+                            ),
+                            pts=self._int_from(team_item, ["pts", "points"]),
                         )
                     )
 
@@ -560,6 +568,8 @@ class TimeToScoreService:
     ) -> Game:
         game_id = self._int_from(item, ["game_id", "id"], 0)
         status = self._normalize_status(item)
+        result_flag = (self._str_from(item, ["result_flag"], "") or "").strip().upper()
+        result_string = (self._str_from(item, ["result_string"], "") or "").strip().upper()
         site_base = self.settings.tts_site_base.rstrip("/")
         external_scorecard_url = self._str_from(item, ["scoresheet_link"])
         if external_scorecard_url:
@@ -590,6 +600,7 @@ class TimeToScoreService:
             date_label=self._str_from(item, ["date", "game_date", "date_label"], "TBD"),
             time_label=self._str_from(item, ["formatted_time", "time_label", "game_time", "time"]),
             status=status,
+            is_shootout=result_flag == "S" or "/SO" in result_string or result_string.endswith("SO"),
             home_team_id=home_team_id,
             home_team_name=self._clean_name(
                 self._str_from(item, ["home_team", "home_team_name", "home"], "Home")

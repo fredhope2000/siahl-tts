@@ -30,7 +30,10 @@
               {% endif %}
               {% if show_lockers and game.away_locker_room %}<span class="game-locker-room">{{ game.away_locker_room }}</span>{% endif %}
             </span>
-            <span class="game-score game-score-away {% if away_wins %}game-winner{% endif %}">{% if game.away_score is not none %}{{ game.away_score }}{% endif %}</span>
+            <span class="game-score game-score-away {% if away_wins %}game-winner{% endif %}">
+              {% if game.away_score is not none %}{{ game.away_score }}{% endif %}
+              {% if game.is_shootout and away_wins %}<span class="game-result-note">SO</span>{% endif %}
+            </span>
             <span class="game-sep game-sep-mobile">@</span>
             <span class="game-team game-team-home {% if home_wins %}game-winner{% endif %}">
               {% if game.home_team_id %}
@@ -40,7 +43,10 @@
               {% endif %}
               {% if show_lockers and game.home_locker_room %}<span class="game-locker-room">{{ game.home_locker_room }}</span>{% endif %}
             </span>
-            <span class="game-score game-score-home {% if home_wins %}game-winner{% endif %}">{% if game.home_score is not none %}{{ game.home_score }}{% endif %}</span>
+            <span class="game-score game-score-home {% if home_wins %}game-winner{% endif %}">
+              {% if game.home_score is not none %}{{ game.home_score }}{% endif %}
+              {% if game.is_shootout and home_wins %}<span class="game-result-note">SO</span>{% endif %}
+            </span>
           </div>
           <div class="game-row-side game-row-side-inline">
             <span class="game-venue">{% if game.venue %}{{ game.venue }}{% else %}-{% endif %}</span>
@@ -96,7 +102,10 @@
             {% endif %}
             {% if show_lockers and game.away_locker_room %}<span class="game-locker-room">{{ game.away_locker_room }}</span>{% endif %}
           </span>
-          <span class="game-score game-score-away {% if away_wins %}game-winner{% endif %}">{% if game.away_score is not none %}{{ game.away_score }}{% endif %}</span>
+          <span class="game-score game-score-away {% if away_wins %}game-winner{% endif %}">
+            {% if game.away_score is not none %}{{ game.away_score }}{% endif %}
+            {% if game.is_shootout and away_wins %}<span class="game-result-note">SO</span>{% endif %}
+          </span>
           <span class="game-sep game-sep-mobile">@</span>
           <span class="game-team game-team-home {% if home_wins %}game-winner{% endif %}">
             {% if game.home_team_id %}
@@ -106,7 +115,10 @@
             {% endif %}
             {% if show_lockers and game.home_locker_room %}<span class="game-locker-room">{{ game.home_locker_room }}</span>{% endif %}
           </span>
-          <span class="game-score game-score-home {% if home_wins %}game-winner{% endif %}">{% if game.home_score is not none %}{{ game.home_score }}{% endif %}</span>
+          <span class="game-score game-score-home {% if home_wins %}game-winner{% endif %}">
+            {% if game.home_score is not none %}{{ game.home_score }}{% endif %}
+            {% if game.is_shootout and home_wins %}<span class="game-result-note">SO</span>{% endif %}
+          </span>
         </div>
         <div class="game-row-side">
           <span class="game-division">{% if game.division_name %}{{ game.division_name }}{% else %}-{% endif %}</span>

@@ -4,8 +4,17 @@
 <section class="panel team-panel team-header-panel">
   <div class="section-head">
     <div>
-      <p class="eyebrow">{{ team.division_name or "Team" }}</p>
-      <h1>{{ team.name }}</h1>
+      <p class="eyebrow">
+        {% if team.division_id %}
+        <a class="eyebrow-link" href="/standings?division={{ team.division_id }}">{{ team.division_name or "Team" }}</a>
+        {% else %}
+        {{ team.division_name or "Team" }}
+        {% endif %}
+      </p>
+      <h1>
+        {{ team.name }}
+        <span class="team-record">({{ team.w or 0 }}-{{ team.l or 0 }}-{{ team.t or 0 }}-{{ team.otl or 0 }})</span>
+      </h1>
     </div>
     <div class="refresh-meta">
       {% if last_refreshed_at %}<span>Last refreshed {{ last_refreshed_at }}</span>{% endif %}

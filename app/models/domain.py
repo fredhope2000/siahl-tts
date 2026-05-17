@@ -23,6 +23,12 @@ class Team(BaseModel):
     season_id: int
     division_id: int | None = None
     division_name: str | None = None
+    gp: int | None = None
+    w: int | None = None
+    l: int | None = None
+    t: int | None = None
+    otl: int | None = None
+    pts: int | None = None
 
 
 class StandingRow(BaseModel):
@@ -72,6 +78,7 @@ class Game(BaseModel):
     date_label: str | None = None
     time_label: str | None = None
     status: Literal["scheduled", "live", "final", "postponed"] | None = None
+    is_shootout: bool = False
     home_team_id: int | None = None
     home_team_name: str
     away_team_id: int | None = None
