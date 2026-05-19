@@ -24,24 +24,18 @@ class TimeToScoreClient:
 
         proxy_config = await self._get_proxy_config()
         if proxy_config is not None:
-            proxy_base_url, proxy_session = proxy_config
-            proxy_params = {
-                "endpoint": endpoint,
-                **{
-                    key: str(value)
-                    for key, value in params.items()
-                    if value not in (None, "", -1)
-                },
-            }
-            url = f"{proxy_base_url}?{urlencode(proxy_params)}"
-            async with httpx.AsyncClient(timeout=20.0) as client:
-                response = await client.get(
-                    url,
-                    headers={"X-Proxy-Session": proxy_session},
-                    follow_redirects=True,
+            try:
+                return await self._request_via_proxy(endpoint, params, proxy_config)
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code != 401:
+                    raise
+                self._clear_proxy_config()
+                refreshed_proxy_config = await self._get_proxy_config()
+                if refreshed_proxy_config is None:
+                    raise
+                return await self._request_via_proxy(
+                    endpoint, params, refreshed_proxy_config
                 )
-                response.raise_for_status()
-                return response.json()
 
         query = build_signed_query(
             endpoint=endpoint,
@@ -53,6 +47,31 @@ class TimeToScoreClient:
         url = f"{base}/{endpoint}?{query}"
         async with httpx.AsyncClient(timeout=20.0) as client:
             response = await client.get(url, follow_redirects=True)
+            response.raise_for_status()
+            return response.json()
+
+    async def _request_via_proxy(
+        self,
+        endpoint: str,
+        params: dict[str, str | int | None],
+        proxy_config: tuple[str, str],
+    ) -> dict[str, Any]:
+        proxy_base_url, proxy_session = proxy_config
+        proxy_params = {
+            "endpoint": endpoint,
+            **{
+                key: str(value)
+                for key, value in params.items()
+                if value not in (None, "", -1)
+            },
+        }
+        url = f"{proxy_base_url}?{urlencode(proxy_params)}"
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.get(
+                url,
+                headers={"X-Proxy-Session": proxy_session},
+                follow_redirects=True,
+            )
             response.raise_for_status()
             return response.json()
 
@@ -76,6 +95,10 @@ class TimeToScoreClient:
         self._proxy_base_url = urljoin(f"{self.settings.tts_site_base.rstrip('/')}/", proxy_base.lstrip("/"))
         self._proxy_session = proxy_session
         return (self._proxy_base_url, self._proxy_session)
+
+    def _clear_proxy_config(self) -> None:
+        self._proxy_base_url = None
+        self._proxy_session = None
 
     async def fetch_public_page(self, path: str) -> str:
         base = self.settings.tts_site_base.rstrip("/")
