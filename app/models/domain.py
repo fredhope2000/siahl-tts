@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Season(BaseModel):
@@ -87,6 +87,7 @@ class Game(BaseModel):
     away_score: int | None = None
     home_locker_room: str | None = None
     away_locker_room: str | None = None
+    officials: list[str] = Field(default_factory=list)
     external_game_url: str | None = None
     external_scorecard_url: str | None = None
 

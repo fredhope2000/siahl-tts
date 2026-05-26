@@ -547,6 +547,24 @@ a:hover {
   font-family: "Trebuchet MS", "Gill Sans", sans-serif;
 }
 
+.gameday-officials {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+  font-size: 0.95rem;
+}
+
+.gameday-officials span {
+  margin-right: 8px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.gameday-officials strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
 .gameday-meta-sep {
   margin: 0 6px;
 }

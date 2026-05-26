@@ -293,6 +293,54 @@ class TimeToScoreService:
             )
         return merged
 
+    async def get_game_officials(self, game_id: int) -> list[str]:
+        async def loader() -> list[str]:
+            if self.uses_mock_data:
+                return []
+
+            raw = await self.client.request(
+                "get_game_center",
+                {
+                    "game_id": game_id,
+                    "league_id": self.settings.league_id,
+                    "season_id": self.settings.current_season_id,
+                    "widget": "gamecenter",
+                },
+            )
+            game_center = raw.get("game_center") if isinstance(raw, dict) else None
+            game_info = (
+                game_center.get("game_info")
+                if isinstance(game_center, dict)
+                else None
+            )
+            return self._normalize_officials(game_info or {})
+
+        return await self.cache.get_or_set(
+            f"game-officials:{game_id}", self.settings.cache_ttl_schedule, loader
+        )
+
+    async def apply_officials(self, games: list[Game]) -> list[Game]:
+        games_missing_officials = [game for game in games if not game.officials]
+        if not games_missing_officials:
+            return games
+
+        results = await asyncio.gather(
+            *(self.get_game_officials(game.id) for game in games_missing_officials),
+            return_exceptions=True,
+        )
+        officials_by_game_id: dict[int, list[str]] = {}
+        for game, result in zip(games_missing_officials, results):
+            if isinstance(result, Exception) or not result:
+                continue
+            officials_by_game_id[game.id] = result
+
+        return [
+            game.model_copy(update={"officials": officials_by_game_id[game.id]})
+            if game.id in officials_by_game_id
+            else game
+            for game in games
+        ]
+
     async def refresh_team_page(self, team_id: int) -> TeamPageData:
         cache_key = f"team:{team_id}"
         self.cache.delete(cache_key)
@@ -611,9 +659,39 @@ class TimeToScoreService:
             ),
             home_score=self._int_from(item, ["home_goals", "home_score"]),
             away_score=self._int_from(item, ["away_goals", "away_score"]),
+            officials=self._normalize_officials(item),
             external_game_url=f"{site_base}/test/game.php?game={game_id}",
             external_scorecard_url=external_scorecard_url,
         )
+
+    def _normalize_officials(self, item: dict[str, Any]) -> list[str]:
+        raw_officials = item.get("officials")
+        values: list[Any] = []
+        if isinstance(raw_officials, dict):
+            values.extend(raw_officials.values())
+        elif isinstance(raw_officials, list):
+            values.extend(raw_officials)
+
+        for key in [
+            "official_1",
+            "official_2",
+            "official_3",
+            "official_4",
+            "referee",
+            "referee_1",
+            "referee_2",
+        ]:
+            values.append(item.get(key))
+
+        officials: list[str] = []
+        seen: set[str] = set()
+        for value in values:
+            name = self._clean_name(str(value)) if value not in (None, "") else ""
+            if not name or name.casefold() in seen:
+                continue
+            seen.add(name.casefold())
+            officials.append(name)
+        return officials
 
     def _parse_locker_room_assignments(self, html: str) -> dict[int, dict[str, str | None]]:
         parser = _LockerRoomTableParser()

@@ -43,6 +43,12 @@
         <span class="gameday-meta-sep">•</span>
         <span>{{ game.venue or "TBD" }}</span>{% if team_locker_room %} <span class="game-locker-room">{{ team_locker_room }}</span>{% endif %}
       </p>
+      {% if game.officials %}
+      <p class="gameday-officials">
+        <span>Officials</span>
+        <strong>{{ game.officials | join(", ") }}</strong>
+      </p>
+      {% endif %}
     </article>
     {% endfor %}
   </div>

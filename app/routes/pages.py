@@ -200,6 +200,7 @@ async def team_page(
         for game in games_with_lockers
         if game.date_label == today_iso
     ]
+    gameday_games = await service.apply_officials(gameday_games)
     context = _base_context(request) | {
         "page_title": team.name,
         "current_season": meta.current_season,
