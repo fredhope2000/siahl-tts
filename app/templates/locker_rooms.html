@@ -30,15 +30,17 @@
       </thead>
       <tbody>
         {% for assignment in assignments %}
+        {% set short_date = assignment.date_label.split(",")[0] if assignment.date_label else "-" %}
+        {% set short_rink = assignment.rink|replace("San Jose ", "") if assignment.rink else "-" %}
         <tr>
           <td class="muted-cell">{{ assignment.game_id }}</td>
           <td
             data-time="{{ assignment.time_label or '-' }}"
-            data-rink="{{ assignment.rink or '-' }}"
+            data-rink="{{ short_rink }}"
             data-league="{{ assignment.league or '-' }}"
-          >{{ assignment.date_label or "-" }}</td>
+          >{{ short_date }}</td>
           <td class="muted-cell">{{ assignment.time_label or "-" }}</td>
-          <td>{{ assignment.rink or "-" }}</td>
+          <td>{{ short_rink }}</td>
           <td>{{ assignment.league or "-" }}</td>
           <td>{{ assignment.home_team_name }}</td>
           <td>{% if assignment.home_locker_room %}<span class="game-locker-room">{{ assignment.home_locker_room }}</span>{% else %}-{% endif %}</td>
