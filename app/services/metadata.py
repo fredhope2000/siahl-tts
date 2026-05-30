@@ -11,6 +11,7 @@ from app.config import Settings
 from app.models.domain import (
     Division,
     Game,
+    LockerRoomAssignment,
     MetaPayload,
     RosterPlayer,
     ScheduleFilters,
@@ -264,16 +265,20 @@ class TimeToScoreService:
             f"team:{team_id}", self.settings.cache_ttl_team, loader
         )
 
-    async def get_locker_room_assignments(self) -> dict[int, dict[str, str | None]]:
-        async def loader() -> dict[int, dict[str, str | None]]:
+    async def get_locker_room_assignments(self) -> dict[int, LockerRoomAssignment]:
+        async def loader() -> dict[int, LockerRoomAssignment]:
             if self.uses_mock_data:
-                return {}
+                return self._mock_locker_room_assignments()
             html = await self.client.fetch_public_page("display-lr-assignments.php")
             return self._parse_locker_room_assignments(html)
 
         return await self.cache.get_or_set(
             "locker-rooms", self.settings.cache_ttl_locker_rooms, loader
         )
+
+    async def refresh_locker_room_assignments(self) -> dict[int, LockerRoomAssignment]:
+        self.cache.delete("locker-rooms")
+        return await self.get_locker_room_assignments()
 
     async def apply_locker_rooms(self, games: list[Game]) -> list[Game]:
         assignments = await self.get_locker_room_assignments()
@@ -286,8 +291,8 @@ class TimeToScoreService:
             merged.append(
                 game.model_copy(
                     update={
-                        "home_locker_room": assignment.get("home_locker_room"),
-                        "away_locker_room": assignment.get("away_locker_room"),
+                        "home_locker_room": assignment.home_locker_room,
+                        "away_locker_room": assignment.away_locker_room,
                     }
                 )
             )
@@ -693,10 +698,10 @@ class TimeToScoreService:
             officials.append(name)
         return officials
 
-    def _parse_locker_room_assignments(self, html: str) -> dict[int, dict[str, str | None]]:
+    def _parse_locker_room_assignments(self, html: str) -> dict[int, LockerRoomAssignment]:
         parser = _LockerRoomTableParser()
         parser.feed(html)
-        assignments: dict[int, dict[str, str | None]] = {}
+        assignments: dict[int, LockerRoomAssignment] = {}
         for row in parser.rows:
             if not row or row[0] == "Game" or len(row) < 9:
                 continue
@@ -704,10 +709,17 @@ class TimeToScoreService:
                 game_id = int(row[0])
             except ValueError:
                 continue
-            assignments[game_id] = {
-                "home_locker_room": row[6] or None,
-                "away_locker_room": row[8] or None,
-            }
+            assignments[game_id] = LockerRoomAssignment(
+                game_id=game_id,
+                date_label=row[1] or None,
+                time_label=row[2] or None,
+                rink=row[3] or None,
+                league=row[4] or None,
+                home_team_name=self._clean_name(row[5] or "TBD"),
+                home_locker_room=row[6] or None,
+                away_team_name=self._clean_name(row[7] or "TBD"),
+                away_locker_room=row[8] or None,
+            )
         return assignments
 
     def _normalize_status(self, item: dict[str, Any]) -> str | None:
@@ -995,6 +1007,21 @@ class TimeToScoreService:
             filters=ScheduleFilters(division=division_id, team=team_id, view=view),
             games=games,
         )
+
+    def _mock_locker_room_assignments(self) -> dict[int, LockerRoomAssignment]:
+        return {
+            576970: LockerRoomAssignment(
+                game_id=576970,
+                date_label="Tomorrow",
+                time_label="8:15 PM",
+                rink="Sharks Ice San Jose",
+                league="SIAHL Division 4",
+                home_team_name="Ice Otters",
+                home_locker_room="B4",
+                away_team_name="Blue Liners",
+                away_locker_room="B2",
+            )
+        }
 
     def _mock_team_page(self, team_id: int) -> TeamPageData:
         meta = self._mock_meta()

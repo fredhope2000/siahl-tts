@@ -160,6 +160,30 @@ async def schedule(
     return templates.TemplateResponse(request, "schedule.html", context)
 
 
+@router.get("/locker-rooms", response_class=HTMLResponse)
+async def locker_rooms(
+    request: Request,
+    refresh: int | None = Query(default=None),
+):
+    service = request.app.state.tts_service
+    if refresh:
+        await service.refresh_locker_room_assignments()
+        return _redirect_without_refresh(request)
+    meta, locker_room_map = await asyncio.gather(
+        service.get_meta(),
+        service.get_locker_room_assignments(),
+    )
+    context = _base_context(request) | {
+        "page_title": "Locker Room Assignments",
+        "current_season": meta.current_season,
+        "assignments": list(locker_room_map.values()),
+        "last_refreshed_at": _format_refresh_timestamp(
+            service.last_refreshed_at("locker-rooms")
+        ),
+    }
+    return templates.TemplateResponse(request, "locker_rooms.html", context)
+
+
 @router.get("/teams/{team_id}", response_class=HTMLResponse)
 async def team_page(
     request: Request,

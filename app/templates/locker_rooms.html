@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel">
+  <div class="section-head">
+    <div>
+      <h1>Locker Room Assignments</h1>
+    </div>
+    <div class="refresh-meta">
+      {% if last_refreshed_at %}<span>Last refreshed {{ last_refreshed_at }}</span>{% endif %}
+      <a href="/locker-rooms?refresh=1">Refresh now</a>
+    </div>
+  </div>
+
+  {% if assignments %}
+  <div class="table-wrap">
+    <table class="data-table locker-room-table">
+      <thead>
+        <tr>
+          <th class="col-locker-game">Game</th>
+          <th class="col-locker-date">Date</th>
+          <th class="col-locker-time">Time</th>
+          <th class="col-locker-rink">Rink</th>
+          <th class="col-locker-league">League</th>
+          <th class="col-locker-team">Home</th>
+          <th class="col-locker-room">LR</th>
+          <th class="col-locker-team">Away</th>
+          <th class="col-locker-room">LR</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for assignment in assignments %}
+        <tr>
+          <td class="muted-cell">{{ assignment.game_id }}</td>
+          <td>{{ assignment.date_label or "-" }}</td>
+          <td class="muted-cell">{{ assignment.time_label or "-" }}</td>
+          <td>{{ assignment.rink or "-" }}</td>
+          <td>{{ assignment.league or "-" }}</td>
+          <td>{{ assignment.home_team_name }}</td>
+          <td>{% if assignment.home_locker_room %}<span class="game-locker-room">{{ assignment.home_locker_room }}</span>{% else %}-{% endif %}</td>
+          <td>{{ assignment.away_team_name }}</td>
+          <td>{% if assignment.away_locker_room %}<span class="game-locker-room">{{ assignment.away_locker_room }}</span>{% else %}-{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty-state">No locker room assignments are available.</p>
+  {% endif %}
+</section>
+{% endblock %}

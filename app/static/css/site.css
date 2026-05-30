@@ -437,6 +437,31 @@ a:hover {
   width: auto;
 }
 
+.data-table .col-locker-game {
+  width: 4.3rem;
+}
+
+.data-table .col-locker-date {
+  width: auto;
+}
+
+.data-table .col-locker-time,
+.data-table .col-locker-room {
+  width: 4rem;
+}
+
+.data-table .col-locker-rink {
+  width: auto;
+}
+
+.data-table .col-locker-league {
+  width: auto;
+}
+
+.data-table .col-locker-team {
+  width: auto;
+}
+
 .data-table th,
 .data-table td {
   padding: 9px 10px;
@@ -502,6 +527,32 @@ a:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.locker-room-table {
+  min-width: 0;
+  font-size: 0.82rem;
+}
+
+.locker-room-table th,
+.locker-room-table td {
+  padding: 6px 7px;
+  vertical-align: middle;
+}
+
+.locker-room-table td:nth-child(2),
+.locker-room-table td:nth-child(4),
+.locker-room-table td:nth-child(5),
+.locker-room-table td:nth-child(6),
+.locker-room-table td:nth-child(8) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.muted-cell {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .goalie-table .col-stat {

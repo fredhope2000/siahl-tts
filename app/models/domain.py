@@ -92,6 +92,18 @@ class Game(BaseModel):
     external_scorecard_url: str | None = None
 
 
+class LockerRoomAssignment(BaseModel):
+    game_id: int
+    date_label: str | None = None
+    time_label: str | None = None
+    rink: str | None = None
+    league: str | None = None
+    home_team_name: str
+    home_locker_room: str | None = None
+    away_team_name: str
+    away_locker_room: str | None = None
+
+
 class MetaPayload(BaseModel):
     current_season: Season
     divisions: list[Division]
