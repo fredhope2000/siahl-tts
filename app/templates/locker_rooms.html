@@ -18,7 +18,7 @@
       <thead>
         <tr>
           <th class="col-locker-game">Game</th>
-          <th class="col-locker-date">Date</th>
+          <th class="col-locker-date">Day</th>
           <th class="col-locker-time">Time</th>
           <th class="col-locker-rink">Rink</th>
           <th class="col-locker-league">League</th>
@@ -32,16 +32,17 @@
         {% for assignment in assignments %}
         {% set short_date = assignment.date_label.split(",")[0] if assignment.date_label else "-" %}
         {% set short_rink = assignment.rink|replace("San Jose ", "") if assignment.rink else "-" %}
+        {% set short_league = assignment.league|replace("SIAHL@SJ Division ", "D") if assignment.league else "-" %}
         <tr>
           <td class="muted-cell">{{ assignment.game_id }}</td>
           <td
             data-time="{{ assignment.time_label or '-' }}"
             data-rink="{{ short_rink }}"
-            data-league="{{ assignment.league or '-' }}"
+            data-league="{{ short_league }}"
           >{{ short_date }}</td>
           <td class="muted-cell">{{ assignment.time_label or "-" }}</td>
           <td>{{ short_rink }}</td>
-          <td>{{ assignment.league or "-" }}</td>
+          <td>{{ short_league }}</td>
           <td>{{ assignment.home_team_name }}</td>
           <td>{% if assignment.home_locker_room %}<span class="game-locker-room">{{ assignment.home_locker_room }}</span>{% else %}-{% endif %}</td>
           <td>{{ assignment.away_team_name }}</td>

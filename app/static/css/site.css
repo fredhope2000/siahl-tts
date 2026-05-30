@@ -442,7 +442,7 @@ a:hover {
 }
 
 .data-table .col-locker-date {
-  width: auto;
+  width: 3.2rem;
 }
 
 .data-table .col-locker-time,
@@ -531,7 +531,7 @@ a:hover {
 
 .locker-room-table {
   min-width: 0;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
 }
 
 .locker-room-table th,
