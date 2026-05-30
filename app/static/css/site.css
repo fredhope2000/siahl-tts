@@ -1192,4 +1192,95 @@ a:hover {
   .roster-table-mobile th:nth-child(5) {
     text-align: center;
   }
+
+  .locker-room-table {
+    display: block;
+    font-size: 0.9rem;
+  }
+
+  .locker-room-table thead {
+    display: none;
+  }
+
+  .locker-room-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .locker-room-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "meta game"
+      "away away-room"
+      "home home-room";
+    gap: 5px 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .locker-room-table tr:last-child {
+    border-bottom: 0;
+  }
+
+  .locker-room-table td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border-bottom: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .locker-room-table td:nth-child(1) {
+    grid-area: game;
+    justify-self: end;
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+
+  .locker-room-table td:nth-child(2) {
+    grid-area: meta;
+    color: var(--ink);
+  }
+
+  .locker-room-table td:nth-child(2)::after {
+    content: " | " attr(data-time) " | " attr(data-rink) " | " attr(data-league);
+    color: var(--muted);
+  }
+
+  .locker-room-table td:nth-child(3),
+  .locker-room-table td:nth-child(4),
+  .locker-room-table td:nth-child(5) {
+    display: none;
+  }
+
+  .locker-room-table td:nth-child(6) {
+    grid-area: home;
+    padding-left: 14px;
+    position: relative;
+  }
+
+  .locker-room-table td:nth-child(6)::before {
+    content: "@";
+    position: absolute;
+    left: 0;
+    color: var(--muted);
+  }
+
+  .locker-room-table td:nth-child(7) {
+    grid-area: home-room;
+    justify-self: end;
+  }
+
+  .locker-room-table td:nth-child(8) {
+    grid-area: away;
+    padding-left: 14px;
+  }
+
+  .locker-room-table td:nth-child(9) {
+    grid-area: away-room;
+    justify-self: end;
+  }
 }

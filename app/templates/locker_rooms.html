@@ -32,7 +32,11 @@
         {% for assignment in assignments %}
         <tr>
           <td class="muted-cell">{{ assignment.game_id }}</td>
-          <td>{{ assignment.date_label or "-" }}</td>
+          <td
+            data-time="{{ assignment.time_label or '-' }}"
+            data-rink="{{ assignment.rink or '-' }}"
+            data-league="{{ assignment.league or '-' }}"
+          >{{ assignment.date_label or "-" }}</td>
           <td class="muted-cell">{{ assignment.time_label or "-" }}</td>
           <td>{{ assignment.rink or "-" }}</td>
           <td>{{ assignment.league or "-" }}</td>
