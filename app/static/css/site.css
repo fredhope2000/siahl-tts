@@ -667,6 +667,47 @@ a:hover {
   margin-top: 18px;
 }
 
+.game-group-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.game-group-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.game-group-toggle:hover,
+.game-group-toggle:focus-visible {
+  border-color: var(--line);
+  background: var(--accent-soft);
+}
+
+.game-group-toggle svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+  transition: transform 0.14s ease;
+}
+
+.game-group[data-collapsed="true"] .game-group-toggle svg {
+  transform: rotate(-90deg);
+}
+
+.game-group[data-collapsed="true"] .game-table {
+  display: none;
+}
+
 .game-table {
   display: grid;
   margin-top: 8px;

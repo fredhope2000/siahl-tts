@@ -71,7 +71,21 @@
   {% else %}
   {% for date_label, games in games_grouped %}
   <section class="game-group" data-game-group data-group-date="{{ games[0].date_label if games else '' }}">
-    <h3>{{ date_label }}</h3>
+    <div class="game-group-head">
+      <h3>{{ date_label }}</h3>
+      <button
+        type="button"
+        class="game-group-toggle"
+        data-game-group-toggle
+        aria-expanded="true"
+        aria-label="Collapse {{ date_label }}"
+        title="Collapse {{ date_label }}"
+      >
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06z"></path>
+        </svg>
+      </button>
+    </div>
     <div class="game-table">
       {% for game in games %}
       {% set away_wins = game.away_score is not none and game.home_score is not none and game.away_score > game.home_score %}

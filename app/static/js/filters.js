@@ -96,6 +96,33 @@ function parseIsoDay(value) {
   return Date.UTC(Number(year), Number(month) - 1, Number(day));
 }
 
+function wireGameGroupToggles() {
+  for (const button of document.querySelectorAll("[data-game-group-toggle]")) {
+    const group = button.closest("[data-game-group]");
+    if (!group) {
+      continue;
+    }
+    const label = group.querySelector("h3")?.textContent.trim() || "this date";
+    const syncToggle = () => {
+      const isCollapsed = group.dataset.collapsed === "true";
+      button.setAttribute("aria-expanded", isCollapsed ? "false" : "true");
+      button.setAttribute(
+        "aria-label",
+        `${isCollapsed ? "Expand" : "Collapse"} ${label}`
+      );
+      button.title = `${isCollapsed ? "Expand" : "Collapse"} ${label}`;
+    };
+
+    button.addEventListener("click", () => {
+      group.dataset.collapsed = group.dataset.collapsed === "true" ? "false" : "true";
+      syncToggle();
+    });
+    syncToggle();
+  }
+}
+
+wireGameGroupToggles();
+
 function updateScheduleUrl(form, selectedDivisions, selectedTeams, view, order) {
   const url = new URL(window.location.href);
   url.searchParams.delete("division");
