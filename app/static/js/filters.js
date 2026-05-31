@@ -117,6 +117,7 @@ function wireGameGroupToggles() {
       group.dataset.collapsed = group.dataset.collapsed === "true" ? "false" : "true";
       syncToggle();
     });
+    button.addEventListener("pointerup", () => button.blur());
     syncToggle();
   }
 }

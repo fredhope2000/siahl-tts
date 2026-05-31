@@ -685,6 +685,7 @@ a:hover {
   background: transparent;
   color: var(--accent);
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .game-group-toggle:hover,
