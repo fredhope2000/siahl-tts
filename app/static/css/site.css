@@ -688,10 +688,16 @@ a:hover {
   -webkit-tap-highlight-color: transparent;
 }
 
-.game-group-toggle:hover,
 .game-group-toggle:focus-visible {
   border-color: var(--line);
   background: var(--accent-soft);
+}
+
+@media (hover: hover) {
+  .game-group-toggle:hover {
+    border-color: var(--line);
+    background: var(--accent-soft);
+  }
 }
 
 .game-group-toggle svg {
