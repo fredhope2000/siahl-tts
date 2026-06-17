@@ -26,9 +26,11 @@ async def _refresh_loop(app: FastAPI) -> None:
     meta_interval = max(settings.refresh_meta_interval_seconds, 60)
     standings_interval = max(settings.refresh_standings_interval_seconds, 60)
     schedule_interval = max(settings.refresh_schedule_interval_seconds, 60)
+    locker_rooms_interval = max(settings.refresh_locker_rooms_interval_seconds, 60)
     last_meta = 0.0
     last_standings = 0.0
     last_schedule = 0.0
+    last_locker_rooms = 0.0
 
     while True:
         now = asyncio.get_running_loop().time()
@@ -40,8 +42,12 @@ async def _refresh_loop(app: FastAPI) -> None:
                 await service.refresh_all_standings()
                 last_standings = now
             if now - last_schedule >= schedule_interval:
+                await service.refresh_schedule(view="all")
                 await service.refresh_schedule(view="upcoming")
                 last_schedule = now
+            if now - last_locker_rooms >= locker_rooms_interval:
+                await service.refresh_locker_room_assignments()
+                last_locker_rooms = now
         except Exception:
             logger.exception("Background refresh failed")
         await asyncio.sleep(60)

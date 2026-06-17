@@ -70,61 +70,67 @@ class TimeToScoreService:
     def uses_mock_data(self) -> bool:
         return self.settings.use_mock_data or not self.settings.upstream_enabled
 
-    async def get_meta(self) -> MetaPayload:
-        async def loader() -> MetaPayload:
-            if self.uses_mock_data:
-                return self._mock_meta()
+    async def _load_meta(self) -> MetaPayload:
+        if self.uses_mock_data:
+            return self._mock_meta()
 
-            leagues_raw, divisions_raw, standings_raw = await asyncio.gather(
-                self.client.request(
-                    "get_leagues",
-                    {
-                        "league_id": self.settings.league_id,
-                    },
-                ),
-                self.client.request(
-                    "get_divisions",
-                    {
-                        "league_id": self.settings.league_id,
-                        "season_id": self.settings.current_season_id,
-                    },
-                ),
-                self._get_all_standings_raw(),
-            )
-            return self._normalize_meta(leagues_raw, divisions_raw, standings_raw)
-
-        return await self.cache.get_or_set(
-            "meta", self.settings.cache_ttl_meta, loader
-        )
-
-    async def refresh_meta(self) -> MetaPayload:
-        self.cache.delete("meta")
-        return await self.get_meta()
-
-    async def get_standings(self, division_id: int) -> StandingsPayload:
-        async def loader() -> StandingsPayload:
-            if self.uses_mock_data:
-                return self._mock_standings(division_id)
-
-            raw = await self.client.request(
-                "get_standings",
+        leagues_raw, divisions_raw, standings_raw = await asyncio.gather(
+            self.client.request(
+                "get_leagues",
+                {
+                    "league_id": self.settings.league_id,
+                },
+            ),
+            self.client.request(
+                "get_divisions",
                 {
                     "league_id": self.settings.league_id,
                     "season_id": self.settings.current_season_id,
-                    "stat_class": self.settings.current_stat_class_id,
-                    "level_id": division_id,
                 },
-            )
-            return await self._normalize_standings(raw, division_id)
+            ),
+            self._get_all_standings_raw(),
+        )
+        return self._normalize_meta(leagues_raw, divisions_raw, standings_raw)
 
+    async def get_meta(self) -> MetaPayload:
         return await self.cache.get_or_set(
-            f"standings:{division_id}", self.settings.cache_ttl_standings, loader
+            "meta", self.settings.cache_ttl_meta, self._load_meta
+        )
+
+    async def refresh_meta(self) -> MetaPayload:
+        return await self.cache.refresh(
+            "meta", self.settings.cache_ttl_meta, self._load_meta
+        )
+
+    async def _load_standings(self, division_id: int) -> StandingsPayload:
+        if self.uses_mock_data:
+            return self._mock_standings(division_id)
+
+        raw = await self.client.request(
+            "get_standings",
+            {
+                "league_id": self.settings.league_id,
+                "season_id": self.settings.current_season_id,
+                "stat_class": self.settings.current_stat_class_id,
+                "level_id": division_id,
+            },
+        )
+        return await self._normalize_standings(raw, division_id)
+
+    async def get_standings(self, division_id: int) -> StandingsPayload:
+        return await self.cache.get_or_set(
+            f"standings:{division_id}",
+            self.settings.cache_ttl_standings,
+            lambda: self._load_standings(division_id),
         )
 
     async def refresh_standings(self, division_id: int) -> StandingsPayload:
         cache_key = f"standings:{division_id}"
-        self.cache.delete(cache_key)
-        return await self.get_standings(division_id)
+        return await self.cache.refresh(
+            cache_key,
+            self.settings.cache_ttl_standings,
+            lambda: self._load_standings(division_id),
+        )
 
     async def get_all_standings(self) -> list[StandingsPayload]:
         if self.uses_mock_data:
@@ -184,14 +190,38 @@ class TimeToScoreService:
         return payloads
 
     async def refresh_all_standings(self) -> list[StandingsPayload]:
-        self.cache.delete("standings:all")
-        meta = await self.get_meta()
-        for division in meta.divisions:
-            self.cache.delete(f"standings:{division.id}")
+        if self.uses_mock_data:
+            return await self.get_all_standings()
+        await self._refresh_all_standings_raw()
         return await self.get_all_standings()
 
     def last_refreshed_at(self, key: str) -> float | None:
         return self.cache.refreshed_at(key)
+
+    async def _load_schedule(
+        self,
+        division_id: int | None = None,
+        team_id: int | None = None,
+        view: str = "upcoming",
+    ) -> SchedulePayload:
+        if self.uses_mock_data:
+            return self._mock_schedule(division_id, team_id, view)
+
+        raw = await self._fetch_schedule_raw(division_id, team_id, view)
+        division_map = None
+        division_name_map = None
+        if team_id is None:
+            meta = await self.get_meta()
+            division_map = {team.id: team.division_id for team in meta.teams}
+            division_name_map = {division.id: division.name for division in meta.divisions}
+        return self._normalize_schedule(
+            raw,
+            division_id,
+            team_id,
+            view,
+            team_division_map=division_map,
+            division_name_map=division_name_map,
+        )
 
     async def get_schedule(
         self,
@@ -199,29 +229,13 @@ class TimeToScoreService:
         team_id: int | None = None,
         view: str = "upcoming",
     ) -> SchedulePayload:
-        async def loader() -> SchedulePayload:
-            if self.uses_mock_data:
-                return self._mock_schedule(division_id, team_id, view)
-
-            raw = await self._fetch_schedule_raw(division_id, team_id, view)
-            division_map = None
-            division_name_map = None
-            if team_id is None:
-                meta = await self.get_meta()
-                division_map = {team.id: team.division_id for team in meta.teams}
-                division_name_map = {division.id: division.name for division in meta.divisions}
-            return self._normalize_schedule(
-                raw,
-                division_id,
-                team_id,
-                view,
-                team_division_map=division_map,
-                division_name_map=division_name_map,
-            )
-
         cache_key = f"schedule:{division_id}:{team_id}:{view}"
         return await self.cache.get_or_set(
-            cache_key, self.settings.cache_ttl_schedule, loader
+            cache_key,
+            self.settings.cache_ttl_schedule,
+            lambda: self._load_schedule(
+                division_id=division_id, team_id=team_id, view=view
+            ),
         )
 
     async def refresh_schedule(
@@ -231,8 +245,13 @@ class TimeToScoreService:
         view: str = "upcoming",
     ) -> SchedulePayload:
         cache_key = f"schedule:{division_id}:{team_id}:{view}"
-        self.cache.delete(cache_key)
-        return await self.get_schedule(division_id=division_id, team_id=team_id, view=view)
+        return await self.cache.refresh(
+            cache_key,
+            self.settings.cache_ttl_schedule,
+            lambda: self._load_schedule(
+                division_id=division_id, team_id=team_id, view=view
+            ),
+        )
 
     async def get_team_page(self, team_id: int) -> TeamPageData:
         async def loader() -> TeamPageData:
@@ -265,20 +284,25 @@ class TimeToScoreService:
             f"team:{team_id}", self.settings.cache_ttl_team, loader
         )
 
-    async def get_locker_room_assignments(self) -> dict[int, LockerRoomAssignment]:
-        async def loader() -> dict[int, LockerRoomAssignment]:
-            if self.uses_mock_data:
-                return self._mock_locker_room_assignments()
-            html = await self.client.fetch_public_page("display-lr-assignments.php")
-            return self._parse_locker_room_assignments(html)
+    async def _load_locker_room_assignments(self) -> dict[int, LockerRoomAssignment]:
+        if self.uses_mock_data:
+            return self._mock_locker_room_assignments()
+        html = await self.client.fetch_public_page("display-lr-assignments.php")
+        return self._parse_locker_room_assignments(html)
 
+    async def get_locker_room_assignments(self) -> dict[int, LockerRoomAssignment]:
         return await self.cache.get_or_set(
-            "locker-rooms", self.settings.cache_ttl_locker_rooms, loader
+            "locker-rooms",
+            self.settings.cache_ttl_locker_rooms,
+            self._load_locker_room_assignments,
         )
 
     async def refresh_locker_room_assignments(self) -> dict[int, LockerRoomAssignment]:
-        self.cache.delete("locker-rooms")
-        return await self.get_locker_room_assignments()
+        return await self.cache.refresh(
+            "locker-rooms",
+            self.settings.cache_ttl_locker_rooms,
+            self._load_locker_room_assignments,
+        )
 
     async def apply_locker_rooms(self, games: list[Game]) -> list[Game]:
         assignments = await self.get_locker_room_assignments()
@@ -355,7 +379,9 @@ class TimeToScoreService:
         await self.refresh_meta()
         await asyncio.gather(
             self.refresh_all_standings(),
+            self.refresh_schedule(view="all"),
             self.refresh_schedule(view="upcoming"),
+            self.refresh_locker_room_assignments(),
         )
 
     def group_games_by_date(self, games: list[Game]) -> list[tuple[str, list[Game]]]:
@@ -396,18 +422,27 @@ class TimeToScoreService:
         return await self.client.request("get_schedule_lite", params)
 
     async def _get_all_standings_raw(self) -> dict[str, Any]:
-        async def loader() -> dict[str, Any]:
-            return await self.client.request(
-                "get_standings",
-                {
-                    "league_id": self.settings.league_id,
-                    "season_id": self.settings.current_season_id,
-                    "stat_class": self.settings.current_stat_class_id,
-                },
-            )
-
         return await self.cache.get_or_set(
-            "standings:all", self.settings.cache_ttl_standings, loader
+            "standings:all",
+            self.settings.cache_ttl_standings,
+            self._load_all_standings_raw,
+        )
+
+    async def _refresh_all_standings_raw(self) -> dict[str, Any]:
+        return await self.cache.refresh(
+            "standings:all",
+            self.settings.cache_ttl_standings,
+            self._load_all_standings_raw,
+        )
+
+    async def _load_all_standings_raw(self) -> dict[str, Any]:
+        return await self.client.request(
+            "get_standings",
+            {
+                "league_id": self.settings.league_id,
+                "season_id": self.settings.current_season_id,
+                "stat_class": self.settings.current_stat_class_id,
+            },
         )
 
     def _normalize_meta(

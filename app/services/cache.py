@@ -48,3 +48,9 @@ class TTLCache:
             return cached
         value = await loader()
         return self.set(key, value, ttl_seconds)
+
+    async def refresh(
+        self, key: str, ttl_seconds: int, loader: Callable[[], Awaitable[Any]]
+    ) -> Any:
+        value = await loader()
+        return self.set(key, value, ttl_seconds)

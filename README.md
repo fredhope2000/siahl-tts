@@ -62,6 +62,7 @@ PREWARM_ON_STARTUP=true
 REFRESH_META_INTERVAL_SECONDS=21600
 REFRESH_STANDINGS_INTERVAL_SECONDS=600
 REFRESH_SCHEDULE_INTERVAL_SECONDS=600
+REFRESH_LOCKER_ROOMS_INTERVAL_SECONDS=600
 ```
 
 Only set overrides if you want behavior different from those defaults. Example:
@@ -78,11 +79,16 @@ The app uses an in-memory TTL cache and can also prewarm/refresh hot data in the
 Current default behavior:
 
 - prewarm metadata, all standings, and upcoming schedule on startup
+- prewarm the all-games schedule used by the home and schedule pages on startup
+- prewarm locker-room assignments on startup
 - refresh metadata every 6 hours
 - refresh standings every 10 minutes
-- refresh upcoming schedule every 10 minutes
+- refresh all-games and upcoming schedules every 10 minutes
+- refresh locker-room assignments every 10 minutes
 
 The cache is process-local, so each app worker maintains its own cache.
+Background refreshes replace existing cache entries only after a successful upstream
+load, so a slow or failed refresh should not empty a hot cache key for visitors.
 
 ## EC2 Deployment Shape
 

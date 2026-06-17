@@ -41,6 +41,9 @@ class Settings:
     refresh_schedule_interval_seconds: int = int(
         os.getenv("REFRESH_SCHEDULE_INTERVAL_SECONDS", "600")
     )
+    refresh_locker_rooms_interval_seconds: int = int(
+        os.getenv("REFRESH_LOCKER_ROOMS_INTERVAL_SECONDS", "600")
+    )
     # Development override: normally the app uses live data whenever key/secret exist.
     use_mock_data: bool = _get_bool("USE_MOCK_DATA", False)
 
