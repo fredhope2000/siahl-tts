@@ -4,6 +4,7 @@ import asyncio
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from html.parser import HTMLParser
+import re
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -948,10 +949,32 @@ class TimeToScoreService:
         except ValueError:
             return (0, value)
 
-    def _game_sort_key(self, game: Game) -> tuple[str, str, str, str]:
+    def _time_label_sort_key(self, value: str | None) -> tuple[int, int, str]:
+        if not value:
+            return (1, 0, "")
+        normalized = value.strip()
+        match = re.search(
+            r"\b(\d{1,2}):(\d{2})\s*([AP])\.?M\.?\b",
+            normalized,
+            re.IGNORECASE,
+        )
+        if not match:
+            return (1, 0, normalized.casefold())
+        hour = int(match.group(1))
+        minute = int(match.group(2))
+        meridiem = match.group(3).upper()
+        if hour < 1 or hour > 12 or minute > 59:
+            return (1, 0, normalized.casefold())
+        if meridiem == "A":
+            hour = 0 if hour == 12 else hour
+        else:
+            hour = 12 if hour == 12 else hour + 12
+        return (0, (hour * 60) + minute, normalized.casefold())
+
+    def _game_sort_key(self, game: Game) -> tuple[str, tuple[int, int, str], str, str]:
         return (
             game.date_label or "9999-12-31",
-            game.time_label or "ZZZ",
+            self._time_label_sort_key(game.time_label),
             game.away_team_name.casefold(),
             game.home_team_name.casefold(),
         )
