@@ -469,6 +469,49 @@ a:hover {
   text-align: left;
 }
 
+.table-sort-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  text-align: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.table-sort-button[data-sort-type="text"] {
+  justify-content: flex-start;
+}
+
+.table-sort-button::after {
+  content: "";
+  width: 0.65em;
+  color: var(--muted);
+  font-size: 0.8em;
+  line-height: 1;
+}
+
+.table-sort-button[data-sort-direction="asc"]::after {
+  content: "▲";
+}
+
+.table-sort-button[data-sort-direction="desc"]::after {
+  content: "▼";
+}
+
+.table-sort-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .data-table td:first-child,
 .data-table th:first-child {
   min-width: 0;

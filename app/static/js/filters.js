@@ -458,6 +458,144 @@ for (const form of document.querySelectorAll("[data-live-schedule]")) {
   wireLiveSchedule(form);
 }
 
+function sortableValue(row, columnIndex, type) {
+  const cell = row.cells[columnIndex];
+  const text = cell ? cell.textContent.trim() : "";
+  if (text === "" || text === "-") {
+    return { missing: true, value: null };
+  }
+  if (type === "text") {
+    return { missing: false, value: text.toLowerCase() };
+  }
+  if (type === "record") {
+    const parts = text.split("-").map((part) => Number.parseFloat(part));
+    if (parts.some((part) => Number.isNaN(part))) {
+      return { missing: true, value: null };
+    }
+    return { missing: false, value: parts };
+  }
+  const number = Number.parseFloat(text.replace(/,/g, ""));
+  return Number.isNaN(number)
+    ? { missing: true, value: null }
+    : { missing: false, value: number };
+}
+
+function compareSortableValues(a, b, direction) {
+  if (a.missing || b.missing) {
+    if (a.missing && b.missing) {
+      return 0;
+    }
+    return a.missing ? 1 : -1;
+  }
+  if (Array.isArray(a.value) && Array.isArray(b.value)) {
+    for (let index = 0; index < Math.max(a.value.length, b.value.length); index += 1) {
+      const left = a.value[index] ?? 0;
+      const right = b.value[index] ?? 0;
+      if (left !== right) {
+        return direction === "asc" ? left - right : right - left;
+      }
+    }
+    return 0;
+  }
+  if (typeof a.value === "number" && typeof b.value === "number") {
+    return direction === "asc" ? a.value - b.value : b.value - a.value;
+  }
+  const result = String(a.value).localeCompare(String(b.value), undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
+  return direction === "asc" ? result : -result;
+}
+
+function initialSortDirection(button) {
+  const columnIndex = Number(button.dataset.sortColumn || "0");
+  const type = button.dataset.sortType || "text";
+  return type === "text" || columnIndex === 0 ? "asc" : "desc";
+}
+
+function nextSortDirection(button) {
+  const currentDirection = button.dataset.sortDirection || "off";
+  const initialDirection = initialSortDirection(button);
+  if (currentDirection === "off") {
+    return initialDirection;
+  }
+  return currentDirection === initialDirection
+    ? initialDirection === "asc"
+      ? "desc"
+      : "asc"
+    : "off";
+}
+
+function wireSortableTable(table) {
+  const body = table.tBodies[0];
+  if (!body) {
+    return;
+  }
+  const rows = [...body.rows];
+  const buttons = [...table.querySelectorAll("[data-sort-column]")];
+
+  for (const [index, row] of rows.entries()) {
+    row.dataset.sortOriginalIndex = String(index);
+  }
+
+  function syncSortButtons(activeButton, direction) {
+    for (const button of buttons) {
+      const header = button.closest("th");
+      const isActive = button === activeButton && direction !== "off";
+      button.dataset.sortDirection = isActive ? direction : "off";
+      button.setAttribute("aria-pressed", isActive ? "true" : "false");
+      if (header) {
+        header.setAttribute(
+          "aria-sort",
+          isActive ? (direction === "asc" ? "ascending" : "descending") : "none"
+        );
+      }
+    }
+  }
+
+  for (const button of buttons) {
+    button.dataset.sortDirection = "off";
+    button.setAttribute("aria-pressed", "false");
+    button.closest("th")?.setAttribute("aria-sort", "none");
+    button.addEventListener("click", () => {
+      const direction = nextSortDirection(button);
+      syncSortButtons(button, direction);
+
+      const orderedRows =
+        direction === "off"
+          ? [...rows].sort(
+              (a, b) =>
+                Number(a.dataset.sortOriginalIndex || "0") -
+                Number(b.dataset.sortOriginalIndex || "0")
+            )
+          : [...rows].sort((a, b) => {
+              const columnIndex = Number(button.dataset.sortColumn || "0");
+              const type = button.dataset.sortType || "text";
+              const result = compareSortableValues(
+                sortableValue(a, columnIndex, type),
+                sortableValue(b, columnIndex, type),
+                direction
+              );
+              if (result !== 0) {
+                return result;
+              }
+              return (
+                Number(a.dataset.sortOriginalIndex || "0") -
+                Number(b.dataset.sortOriginalIndex || "0")
+              );
+            });
+
+      for (const row of orderedRows) {
+        body.appendChild(row);
+      }
+    });
+  }
+}
+
+for (const table of document.querySelectorAll("[data-sortable-table]")) {
+  wireSortableTable(table);
+}
+
 function wireRosterToggle(toggle) {
   const panel = toggle.closest(".panel");
   if (!panel) {

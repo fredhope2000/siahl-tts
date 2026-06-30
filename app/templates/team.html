@@ -98,7 +98,7 @@
   <section data-roster-block>
   <h3 class="roster-subhead">Skaters</h3>
   <div class="table-wrap">
-    <table class="data-table roster-table roster-table-desktop">
+    <table class="data-table roster-table roster-table-desktop" data-sortable-table>
       <colgroup>
         <col class="col-roster-number">
         <col class="col-roster-name">
@@ -110,13 +110,13 @@
       </colgroup>
       <thead>
         <tr>
-          <th>#</th>
-          <th>Player</th>
-          <th>GP</th>
-          <th>G</th>
-          <th>A</th>
-          <th>PTS</th>
-          <th>PIM</th>
+          <th><button type="button" class="table-sort-button" data-sort-column="0" data-sort-type="number">#</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="1" data-sort-type="text">Player</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="2" data-sort-type="number">GP</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="3" data-sort-type="number">G</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="4" data-sort-type="number">A</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="5" data-sort-type="number">PTS</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="6" data-sort-type="number">PIM</button></th>
         </tr>
       </thead>
       <tbody>
@@ -139,7 +139,7 @@
         {% endfor %}
       </tbody>
     </table>
-    <table class="data-table roster-table roster-table-mobile">
+    <table class="data-table roster-table roster-table-mobile" data-sortable-table>
       <colgroup>
         <col class="col-roster-number">
         <col class="col-roster-name">
@@ -149,11 +149,11 @@
       </colgroup>
       <thead>
         <tr>
-          <th>#</th>
-          <th>Player</th>
-          <th>GP</th>
-          <th>G</th>
-          <th>PTS</th>
+          <th><button type="button" class="table-sort-button" data-sort-column="0" data-sort-type="number">#</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="1" data-sort-type="text">Player</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="2" data-sort-type="number">GP</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="3" data-sort-type="number">G</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="4" data-sort-type="number">PTS</button></th>
         </tr>
       </thead>
       <tbody>
@@ -182,7 +182,7 @@
   <section data-roster-block>
   <h3 class="roster-subhead">Goalies</h3>
   <div class="table-wrap">
-    <table class="data-table roster-table goalie-table roster-table-desktop">
+    <table class="data-table roster-table goalie-table roster-table-desktop" data-sortable-table>
       <colgroup>
         <col class="col-roster-number">
         <col class="col-roster-name">
@@ -197,15 +197,15 @@
       </colgroup>
       <thead>
         <tr>
-          <th>#</th>
-          <th>Player</th>
-          <th>GP</th>
-          <th>W</th>
-          <th>L</th>
-          <th>OTL</th>
-          <th>GAA</th>
-          <th>SV%</th>
-          <th>SO</th>
+          <th><button type="button" class="table-sort-button" data-sort-column="0" data-sort-type="number">#</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="1" data-sort-type="text">Player</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="2" data-sort-type="number">GP</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="3" data-sort-type="number">W</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="4" data-sort-type="number">L</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="5" data-sort-type="number">OTL</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="6" data-sort-type="number">GAA</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="7" data-sort-type="number">SV%</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="8" data-sort-type="number">SO</button></th>
         </tr>
       </thead>
       <tbody>
@@ -230,7 +230,7 @@
         {% endfor %}
       </tbody>
     </table>
-    <table class="data-table roster-table goalie-table roster-table-mobile">
+    <table class="data-table roster-table goalie-table roster-table-mobile" data-sortable-table>
       <colgroup>
         <col class="col-roster-number">
         <col class="col-roster-name">
@@ -240,11 +240,11 @@
       </colgroup>
       <thead>
         <tr>
-          <th>#</th>
-          <th>Player</th>
-          <th>Record</th>
-          <th>GAA</th>
-          <th>SV%</th>
+          <th><button type="button" class="table-sort-button" data-sort-column="0" data-sort-type="number">#</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="1" data-sort-type="text">Player</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="2" data-sort-type="record">Record</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="3" data-sort-type="number">GAA</button></th>
+          <th><button type="button" class="table-sort-button" data-sort-column="4" data-sort-type="number">SV%</button></th>
         </tr>
       </thead>
       <tbody>
