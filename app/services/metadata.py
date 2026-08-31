@@ -530,14 +530,14 @@ class TimeToScoreService:
 
     def _normalize_current_season(self, leagues_raw: dict[str, Any]) -> Season:
         league = (leagues_raw.get("leagues") or [{}])[0]
-        season_id = self._int_from(league, ["current_season"], self.settings.current_season_id)
+        season_id = self.settings.current_season_id
         label = None
         for item in league.get("seasons", []):
             if self._int_from(item, ["season_id"]) == season_id:
                 label = self._str_from(item, ["season_name"])
                 break
         return Season(
-            id=season_id or self.settings.current_season_id,
+            id=season_id,
             label=label or f"Season {self.settings.current_season_id}",
             is_current=True,
         )

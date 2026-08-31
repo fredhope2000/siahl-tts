@@ -58,3 +58,24 @@ def test_game_sort_key_handles_midnight_and_unknown_times() -> None:
     games.sort(key=service._game_sort_key)
 
     assert [game.time_label for game in games] == ["12:15 AM", "11:45 PM", "TBD"]
+
+
+def test_configured_season_overrides_upstream_current_season() -> None:
+    service = _service()
+
+    season = service._normalize_current_season(
+        {
+            "leagues": [
+                {
+                    "current_season": 74,
+                    "seasons": [
+                        {"season_id": "74", "season_name": "Summer 2026"},
+                        {"season_id": "77", "season_name": "Fall 2026"},
+                    ],
+                }
+            ]
+        }
+    )
+
+    assert season.id == 77
+    assert season.label == "Fall 2026"

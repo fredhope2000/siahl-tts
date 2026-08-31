@@ -54,7 +54,7 @@ Everything else is optional. The app already defaults to:
 ```bash
 APP_NAME="SIAHL"
 LEAGUE_ID=1
-CURRENT_SEASON_ID=74
+CURRENT_SEASON_ID=77
 CURRENT_STAT_CLASS_ID=1
 TTS_API_BASE="https://api.sharksice.timetoscore.com"
 TTS_SITE_BASE="https://stats.sharksice.timetoscore.com"
