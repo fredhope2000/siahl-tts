@@ -87,31 +87,50 @@ async def home(request: Request):
 @router.get("/standings", response_class=HTMLResponse)
 async def standings(
     request: Request,
+    season: int | None = Query(default=None),
     division: str | None = Query(default=None),
     refresh: int | None = Query(default=None),
 ):
     service = request.app.state.tts_service
+    seasons = await service.get_seasons()
+    configured_season_id = request.app.state.settings.current_season_id
+    selected_season = next(
+        (item for item in seasons if item.id == season),
+        next(
+            (item for item in seasons if item.id == configured_season_id),
+            seasons[0],
+        ),
+    )
     if refresh:
-        if (division or "all") == "all":
-            await service.refresh_all_standings()
-        else:
-            await service.refresh_standings(int(division or "0"))
+        await service.refresh_all_standings(selected_season.id)
         return _redirect_without_refresh(request)
-    meta = await service.get_meta()
+
     selected_division = division or "all"
+    all_payloads = await service.get_all_standings(selected_season.id)
+    divisions = [payload.division for payload in all_payloads]
+    valid_division_ids = {str(item.id) for item in divisions}
+    if selected_division != "all" and selected_division not in valid_division_ids:
+        selected_division = "all"
+
     standings_payload = None
     all_standings = []
     if selected_division == "all":
-        all_standings = await service.get_all_standings()
-        refreshed_at = service.last_refreshed_at("standings:all")
+        all_standings = all_payloads
     else:
-        division_id = int(selected_division)
-        standings_payload = await service.get_standings(division_id)
-        refreshed_at = service.last_refreshed_at(f"standings:{division_id}")
+        standings_payload = next(
+            payload
+            for payload in all_payloads
+            if payload.division.id == int(selected_division)
+        )
+    refreshed_at = service.last_refreshed_at(
+        service.all_standings_cache_key(selected_season.id)
+    )
     context = _base_context(request) | {
         "page_title": "Standings",
-        "current_season": meta.current_season,
-        "divisions": meta.divisions,
+        "current_season": selected_season,
+        "seasons": seasons,
+        "selected_season": selected_season.id,
+        "divisions": divisions,
         "selected_division": selected_division,
         "standings_payload": standings_payload,
         "all_standings": all_standings,

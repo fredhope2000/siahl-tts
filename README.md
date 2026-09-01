@@ -114,4 +114,5 @@ Example `nginx` proxy target:
 ## Current Limitations
 
 - The upstream schedule endpoint can be slow with some filter combinations, so the app currently infers division for the global schedule from team metadata when needed.
-- Current season is configured, not auto-discovered at runtime.
+- The standings page discovers available seasons at runtime. Schedule and team pages
+  still use the configured current season.

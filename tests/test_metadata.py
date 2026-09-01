@@ -1,3 +1,5 @@
+import asyncio
+
 from app.config import Settings
 from app.models.domain import Game
 from app.services.cache import TTLCache
@@ -79,3 +81,69 @@ def test_configured_season_overrides_upstream_current_season() -> None:
 
     assert season.id == 77
     assert season.label == "Fall 2026"
+
+
+def test_normalize_seasons_includes_past_seasons() -> None:
+    service = _service()
+
+    seasons = service._normalize_seasons(
+        {
+            "leagues": [
+                {
+                    "seasons": [
+                        {"season_id": "77", "season_name": "Fall 2026"},
+                        {"season_id": "74", "season_name": "Summer 2026"},
+                    ]
+                }
+            ]
+        }
+    )
+
+    assert [(season.id, season.label) for season in seasons] == [
+        (77, "Fall 2026"),
+        (74, "Summer 2026"),
+    ]
+    assert seasons[0].is_current is True
+    assert seasons[1].is_current is False
+
+
+def test_past_season_standings_use_separate_cache_keys() -> None:
+    class RecordingClient:
+        def __init__(self) -> None:
+            self.season_ids: list[int] = []
+
+        async def request(self, endpoint: str, params: dict) -> dict:
+            assert endpoint == "get_standings"
+            self.season_ids.append(params["season_id"])
+            return {
+                "standings": {
+                    "leagues": [
+                        {
+                            "levels": [
+                                {
+                                    "id": 221,
+                                    "name": "Adult Division 4",
+                                    "conferences": [],
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+
+    settings = Settings(tts_api_key="test", tts_api_secret="test")
+    recording_client = RecordingClient()
+    service = TimeToScoreService(
+        settings=settings,
+        cache=TTLCache(),
+        client=recording_client,  # type: ignore[arg-type]
+    )
+
+    first = asyncio.run(service.get_all_standings(74))
+    asyncio.run(service.get_all_standings(74))
+    second_season = asyncio.run(service.get_all_standings(73))
+
+    assert recording_client.season_ids == [74, 73]
+    assert first[0].season_id == 74
+    assert first[0].division.name == "Division 4"
+    assert second_season[0].season_id == 73

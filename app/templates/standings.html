@@ -8,11 +8,21 @@
     </div>
     <div class="refresh-meta">
       {% if last_refreshed_at %}<span>Last refreshed {{ last_refreshed_at }}</span>{% endif %}
-      <a href="/standings?division={{ selected_division }}&refresh=1">Refresh now</a>
+      <a href="/standings?season={{ selected_season }}&division={{ selected_division }}&refresh=1">Refresh now</a>
     </div>
   </div>
 
   <form method="get" action="/standings" class="filters">
+    <label>
+      Season
+      <select name="season" onchange="this.form.elements.division.value='all'; this.form.submit()">
+        {% for season in seasons %}
+        <option value="{{ season.id }}" {% if selected_season == season.id %}selected{% endif %}>
+          {{ season.label }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
     <label>
       Division
       <select name="division" onchange="this.form.submit()">

@@ -26,3 +26,12 @@ def test_api_meta_renders() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["current_season"]["id"] == 77
+
+
+def test_standings_page_can_select_a_past_season() -> None:
+    response = client.get("/standings?season=74")
+
+    assert response.status_code == 200
+    assert '<option value="74" selected>' in response.text
+    assert "Summer 2026" in response.text
+    assert "Ice Otters" in response.text

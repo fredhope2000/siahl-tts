@@ -103,6 +103,21 @@ class TimeToScoreService:
             "meta", self.settings.cache_ttl_meta, self._load_meta
         )
 
+    async def _load_seasons(self) -> list[Season]:
+        if self.uses_mock_data:
+            return self._mock_seasons()
+
+        raw = await self.client.request(
+            "get_leagues",
+            {"league_id": self.settings.league_id},
+        )
+        return self._normalize_seasons(raw)
+
+    async def get_seasons(self) -> list[Season]:
+        return await self.cache.get_or_set(
+            "seasons", self.settings.cache_ttl_meta, self._load_seasons
+        )
+
     async def _load_standings(self, division_id: int) -> StandingsPayload:
         if self.uses_mock_data:
             return self._mock_standings(division_id)
@@ -133,14 +148,22 @@ class TimeToScoreService:
             lambda: self._load_standings(division_id),
         )
 
-    async def get_all_standings(self) -> list[StandingsPayload]:
+    async def get_all_standings(
+        self, season_id: int | None = None
+    ) -> list[StandingsPayload]:
+        season_id = season_id or self.settings.current_season_id
         if self.uses_mock_data:
             meta = self._mock_meta()
-            return [self._mock_standings(division.id) for division in meta.divisions]
+            return [
+                self._mock_standings(division.id, season_id)
+                for division in meta.divisions
+            ]
 
-        raw = await self._get_all_standings_raw()
-        meta = await self.get_meta()
-        division_map = {division.id: division for division in meta.divisions}
+        raw = await self._get_all_standings_raw(season_id)
+        division_map: dict[int, Division] = {}
+        if season_id == self.settings.current_season_id:
+            meta = await self.get_meta()
+            division_map = {division.id: division for division in meta.divisions}
         payloads: list[StandingsPayload] = []
         for level in self._extract_standings_levels(raw):
             level_id = self._int_from(level, ["id", "level_id"])
@@ -154,7 +177,7 @@ class TimeToScoreService:
                         self._str_from(level, ["name", "level_name"], f"Division {level_id}")
                     )
                     or f"Division {level_id}",
-                    season_id=self.settings.current_season_id,
+                    season_id=season_id,
                 ),
             )
             standings: list[StandingRow] = []
@@ -182,7 +205,7 @@ class TimeToScoreService:
                     )
             payloads.append(
                 StandingsPayload(
-                    season_id=self.settings.current_season_id,
+                    season_id=season_id,
                     division=division,
                     standings=standings,
                 )
@@ -190,11 +213,14 @@ class TimeToScoreService:
         payloads.sort(key=lambda item: self._division_sort_key(item.division.name))
         return payloads
 
-    async def refresh_all_standings(self) -> list[StandingsPayload]:
+    async def refresh_all_standings(
+        self, season_id: int | None = None
+    ) -> list[StandingsPayload]:
+        season_id = season_id or self.settings.current_season_id
         if self.uses_mock_data:
-            return await self.get_all_standings()
-        await self._refresh_all_standings_raw()
-        return await self.get_all_standings()
+            return await self.get_all_standings(season_id)
+        await self._refresh_all_standings_raw(season_id)
+        return await self.get_all_standings(season_id)
 
     def last_refreshed_at(self, key: str) -> float | None:
         return self.cache.refreshed_at(key)
@@ -422,26 +448,36 @@ class TimeToScoreService:
             params["days"] = 20
         return await self.client.request("get_schedule_lite", params)
 
-    async def _get_all_standings_raw(self) -> dict[str, Any]:
+    def all_standings_cache_key(self, season_id: int | None = None) -> str:
+        season_id = season_id or self.settings.current_season_id
+        return f"standings:{season_id}:all"
+
+    async def _get_all_standings_raw(
+        self, season_id: int | None = None
+    ) -> dict[str, Any]:
+        season_id = season_id or self.settings.current_season_id
         return await self.cache.get_or_set(
-            "standings:all",
+            self.all_standings_cache_key(season_id),
             self.settings.cache_ttl_standings,
-            self._load_all_standings_raw,
+            lambda: self._load_all_standings_raw(season_id),
         )
 
-    async def _refresh_all_standings_raw(self) -> dict[str, Any]:
+    async def _refresh_all_standings_raw(
+        self, season_id: int | None = None
+    ) -> dict[str, Any]:
+        season_id = season_id or self.settings.current_season_id
         return await self.cache.refresh(
-            "standings:all",
+            self.all_standings_cache_key(season_id),
             self.settings.cache_ttl_standings,
-            self._load_all_standings_raw,
+            lambda: self._load_all_standings_raw(season_id),
         )
 
-    async def _load_all_standings_raw(self) -> dict[str, Any]:
+    async def _load_all_standings_raw(self, season_id: int) -> dict[str, Any]:
         return await self.client.request(
             "get_standings",
             {
                 "league_id": self.settings.league_id,
-                "season_id": self.settings.current_season_id,
+                "season_id": season_id,
                 "stat_class": self.settings.current_stat_class_id,
             },
         )
@@ -541,6 +577,36 @@ class TimeToScoreService:
             label=label or f"Season {self.settings.current_season_id}",
             is_current=True,
         )
+
+    def _normalize_seasons(self, leagues_raw: dict[str, Any]) -> list[Season]:
+        league = (leagues_raw.get("leagues") or [{}])[0]
+        seasons: list[Season] = []
+        seen_ids: set[int] = set()
+        for item in league.get("seasons", []):
+            season_id = self._int_from(item, ["season_id", "id"])
+            if season_id is None or season_id in seen_ids:
+                continue
+            seen_ids.add(season_id)
+            seasons.append(
+                Season(
+                    id=season_id,
+                    label=self._str_from(
+                        item, ["season_name", "name"], f"Season {season_id}"
+                    ),
+                    is_current=season_id == self.settings.current_season_id,
+                )
+            )
+
+        if self.settings.current_season_id not in seen_ids:
+            seasons.insert(
+                0,
+                Season(
+                    id=self.settings.current_season_id,
+                    label=f"Season {self.settings.current_season_id}",
+                    is_current=True,
+                ),
+            )
+        return seasons
 
     async def _normalize_standings(
         self, raw: dict[str, Any], division_id: int
@@ -996,15 +1062,38 @@ class TimeToScoreService:
         ]
         return MetaPayload(current_season=season, divisions=divisions, teams=teams)
 
-    def _mock_standings(self, division_id: int) -> StandingsPayload:
+    def _mock_seasons(self) -> list[Season]:
+        seasons = [
+            Season(
+                id=self.settings.current_season_id,
+                label=f"Season {self.settings.current_season_id}",
+                is_current=True,
+            )
+        ]
+        if self.settings.current_season_id != 74:
+            seasons.append(Season(id=74, label="Summer 2026", is_current=False))
+        return seasons
+
+    def _mock_standings(
+        self, division_id: int, season_id: int | None = None
+    ) -> StandingsPayload:
+        season_id = season_id or self.settings.current_season_id
         meta = self._mock_meta()
-        division = next((item for item in meta.divisions if item.id == division_id), meta.divisions[0])
+        source_division = next(
+            (item for item in meta.divisions if item.id == division_id),
+            meta.divisions[0],
+        )
+        division = Division(
+            id=source_division.id,
+            name=source_division.name,
+            season_id=season_id,
+        )
         rows = [
             StandingRow(team_id=323, team_name="Ice Otters", division_id=division.id, gp=10, w=7, l=2, t=1, otl=0, pts=15, streak="Won 3"),
             StandingRow(team_id=324, team_name="Blue Liners", division_id=division.id, gp=10, w=6, l=3, t=1, otl=0, pts=13, streak="Won 1"),
         ]
         return StandingsPayload(
-            season_id=self.settings.current_season_id,
+            season_id=season_id,
             division=division,
             standings=rows,
         )
