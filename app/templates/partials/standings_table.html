@@ -35,8 +35,8 @@
         <td>{{ row.t or 0 }}</td>
         <td>{{ row.otl or 0 }}</td>
         <td>{{ row.pts or 0 }}</td>
-        <td>{{ row.streak or 0 }}</td>
-        <td>{{ row.tiebreaker or 0 }}</td>
+        <td>{{ row.streak or "-" }}</td>
+        <td>{{ row.tiebreaker or "-" }}</td>
       </tr>
       {% endfor %}
     </tbody>

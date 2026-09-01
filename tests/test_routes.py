@@ -1,6 +1,8 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.models.domain import StandingRow
+from app.routes.pages import templates
 
 
 client = TestClient(app)
@@ -35,3 +37,23 @@ def test_standings_page_can_select_a_past_season() -> None:
     assert '<option value="74" selected>' in response.text
     assert "Summer 2026" in response.text
     assert "Ice Otters" in response.text
+
+
+def test_standings_table_uses_dashes_for_missing_streak_and_tiebreaker() -> None:
+    rendered = templates.get_template("partials/standings_table.html").render(
+        standings=[
+            StandingRow(
+                team_id=1,
+                team_name="New Team",
+                division_id=1,
+                gp=0,
+                w=0,
+                l=0,
+                t=0,
+                otl=0,
+                pts=0,
+            )
+        ]
+    )
+
+    assert rendered.count("<td>-</td>") == 2
